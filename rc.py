@@ -5,7 +5,7 @@ from typing import Iterator, List
 # always to square
 
 
-class Rothko():
+class RC4():
     """Encryption class based on RC4A algorithm that also generates bitmaps?"""
     def __init__(self, key):
         self.sb = None  # statebox
@@ -45,7 +45,3 @@ class Rothko():
             j = (j + s[i]) % 256
             self.swap(i, j)
             yield s[(s[i] + s[j]) % 256]
-
-
-if __name__ == "__main__":
-    pass
