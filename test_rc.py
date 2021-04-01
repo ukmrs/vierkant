@@ -1,12 +1,12 @@
 from rc import RC4
 from collections import namedtuple
-import random
+import pytest
 
 RC4example = namedtuple('RC4example',
                         ['key', 'keystream', 'input', 'ciphertext'])
 
 
-class TestRC4againstexamples():
+class TestAgainstExamples():
     examples = (RC4example('Key', 'eb9f7781b734ca72a719', 'Plaintext',
                            'bbf316e8d940af0ad3'),
                 RC4example('Wiki', '6044db6d41b7', 'pedia', '1021bf0420'),
@@ -31,17 +31,30 @@ class TestRC4againstexamples():
 
 # --- test encode decode ---
 
-def test_ed_whitespace():
+# whitespace, weird, simple and 256 bytes
+KEYS = ("\t\n \t\n"
+        "some\tthing\n eles Qqę2πśð„’ę©something", "simple key",
+        "".join(chr(i) for i in range(200, 456)))
+
+
+def ed_helper(original):  # ed feels unfortunate because of certain dysfunction
+    for key in KEYS:
+        encoded = RC4(key).encode(original)
+        assert original == RC4(key).decode(encoded)
+
+
+def test_ed_weird():
     original = 'tes#^TEŋ ęß©t\n\tπś535ææœ ’æŋ’ðð’©ęþ'
-    key = "some\tthing\n eles Qqę2πśð„’ę©"
-    encoded = RC4(key).encode(original)
-    assert original == RC4(key).decode(encoded)
+    ed_helper(original)
 
 
+def test_ed_simple():
+    ed_helper("simple secret message")
+
+
+@pytest.mark.slow
 def test_ed_highunicode():
-    original = "".join(chr(i) for i in range(161, 55290))
-    key = "something fancy"
-    encoded = RC4(key).encode(original)
-    assert original == RC4(key).decode(encoded)
-
+    """unicode characters except control/ASCII/Latin up to
+    high surrogate weirdness"""
+    ed_helper("".join(chr(i) for i in range(161, 55290)))
 

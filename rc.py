@@ -6,14 +6,14 @@ from typing import Iterator, List
 
 
 class RC4():
-    """Encryption class based on RC4A algorithm that also generates bitmaps?"""
+    """Encryption class based on RC4 algorithm that also generates bitmaps?"""
     def __init__(self, key):
         self.sb = None  # statebox
         self.reset(key)  # looks akward but allows resetting the instance
 
     def encode(self, msg: str):
         "API encode"
-        return self._encode([ord(char) for char in msg])
+        return self._encode([char for char in bytearray(msg, encoding="utf8")])
 
     def _encode(self, ord_msg_gen: List[int]) -> List[int]:
         """private encode"""
@@ -21,11 +21,12 @@ class RC4():
         return [p ^ o for p, o in zip(pr_gen, ord_msg_gen)]
 
     def decode(self, msg: List[int]) -> str:
-        return "".join((chr(c) for c in self._encode(msg)))
+        return bytearray(self._encode(msg)).decode("utf8")
 
     def reset(self, key):
         """resets or initialiazes the class instance with a new key
         perform key scheduling algorithm"""
+        # TODO if I care for utf8 above a byte then change this func
         key_len = len(key)  # len never changes
         j = 0
         self.sb = list(range(256))
