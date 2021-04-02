@@ -35,20 +35,23 @@ def test_assemble_mod_square():
     assert (mn == np.array([0, 0, 0])).all()  # type: ignore
 
 
-def test_encode_decode_mod_square():
-    r1 = Rothko("SimpleKey")
-    r2 = Rothko("SimpleKey")
-    appendix = 23
-    leftovers = 2
-    out = r1.encode_mod_square(appendix, leftovers)
-    out = assemble_mod_square(out)
-
+def encode_decode_helper(appendix, leftovers, key):
+    r1 = Rothko(key)
+    r2 = Rothko(key)
+    out = assemble_mod_square(r1.encode_mod_square(appendix, leftovers))
     pos1, pos2 = r2.calc_mod_bits_positions()
     lft, a = r2.decode_mod_square(out, pos1, pos2)
 
     assert r1.gen() == r2.gen()
-
     assert appendix == a
     assert lft == leftovers
+
+
+def test_encode_decode_mod_square():
+    encode_decode_helper(10332, 2, "a key of sorts")
+    encode_decode_helper(999999, 1, "dfsfsdf 232")
+    encode_decode_helper(1048547, 2, "s1r431]\n\trf")
+    encode_decode_helper(5, 0, "s1r431rf")
+    encode_decode_helper(5325, 1, "dfsq")
 
 

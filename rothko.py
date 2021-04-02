@@ -74,10 +74,11 @@ class Rothko():
         about the amount of non-significant random squares
         called here ex_appendix and the amount of leftovers"""
 
-        lin = binstrip(leftovers) if leftovers else random.choice(("00", "11"))
+        lin = binstrip(leftovers).zfill(2) if leftovers else random.choice(
+            ("00", "11"))
         first, second = self.calc_mod_bits_positions()
         encoded_ex_appendix = (ex_appendix ^ self.gen()) & 0x3fffff
-        print(encoded_ex_appendix)
+        print(lin)
         print(binstrip(encoded_ex_appendix))
         bitseq = insert_bits(encoded_ex_appendix, {
             first: lin[0],
@@ -88,20 +89,22 @@ class Rothko():
 
     def decode_mod_square(self, square, first_bit_pos,
                           second_bit_pos) -> Tuple[int, int]:
-        # TODO change it to masks and shifts
-        # this just a fast solution
+        # TODO change it is so its not hacky
+        # shifts and masks for instance
         bits = list("".join(binstrip(byte).zfill(8) for byte in square))
 
-        second_bit = bits[second_bit_pos]
-        first_bit = bits.pop(first_bit_pos)
-        bits.pop(second_bit_pos)
+        if first_bit_pos > second_bit_pos:
+            first_bit = bits.pop(first_bit_pos)
+            second_bit = bits.pop(second_bit_pos)
+        else:
+            second_bit = bits.pop(second_bit_pos)
+            first_bit = bits.pop(first_bit_pos)
+
         leftovers = int((first_bit + second_bit), 2) % 3  # 11 and 00 both 0
         encoded = int("".join(bits), 2)
-        print(binstrip(encoded))
-        print(encoded)
 
+        print(binstrip(encoded))
         decoded_ex_appendix = (encoded ^ self.gen()) & 0x3fffff
-        print(decoded_ex_appendix)
 
         return leftovers, decoded_ex_appendix
 
