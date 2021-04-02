@@ -4,6 +4,11 @@ import numpy as np
 import random
 from math import ceil, sqrt
 from PIL import Image
+from typing import Tuple
+
+
+def binstrip(num: int):
+    return bin(num)[2:]  # equivalent to .lstrip("0x")
 
 
 def calc_square_edge(encoded_len: int):
@@ -18,15 +23,6 @@ def create_pixel_array(encoded, edge: int, appendix: int):
     return arr
 
 
-def decode_mod_square(square):
-    """decodes info about how many leftovers they were in the last square
-    [significant, random, random] -> 2 etc
-    checks if it encodes info about amount of random values"""
-    leftovers = (square & 3) % 3
-    div = square >> 2
-    return leftovers, div
-
-
 def calc_encoded_ex_appendix(ex_appendix, xored):
     return ex_appendix ^ xored & 0x3fffff
 
@@ -34,7 +30,7 @@ def calc_encoded_ex_appendix(ex_appendix, xored):
 def insert_bits(original: int, bits: dict):
     out = ""
     shift = 0
-    for bl in bin(original).lstrip("0b"):
+    for bl in binstrip(original).zfill(22):
         while shift in bits:
             out += bits[shift]
             shift += 1
@@ -44,6 +40,13 @@ def insert_bits(original: int, bits: dict):
         out += bits[shift]
         shift += 1
     return out
+
+
+def assemble_mod_square(bitseq: str):
+    mod_square = np.zeros(3, dtype=np.uint8)
+    for i in range(0, len(bitseq), 8):
+        mod_square[i // 8] = int(bitseq[i:i + 8], 2)
+    return mod_square
 
 
 class Rothko():
@@ -57,19 +60,50 @@ class Rothko():
 
     def encode(self, secret):
         encoded = np.asarray(self.rc.encode(secret), dtype=np.uint8)
-        remainder = len(encoded) % 3
+        leftovers = len(encoded) % 3
         edge = calc_square_edge(len(encoded))
         appendix = edge**2 * 3 - len(encoded)
+        ex_appendix = appendix - 1
         self.arr = create_pixel_array(encoded, edge, appendix)
-
+        mod_square = assemble_mod_square(
+            self.encode_mod_square(ex_appendix, leftovers))
         mod_square_position = self.gen() % edge**2
 
-    def assemble_mod_square(self, ex_appendix):
+    def encode_mod_square(self, ex_appendix, leftovers):
         """Prepares and encodes information in the mod square
         about the amount of non-significant random squares
         called here ex_appendix and the amount of leftovers"""
+
+        lin = binstrip(leftovers) if leftovers else random.choice(("00", "11"))
         first, second = self.calc_mod_bits_positions()
-        tmp = ex_appendix ^ self.gen() & 0x3fffff
+        encoded_ex_appendix = (ex_appendix ^ self.gen()) & 0x3fffff
+        print(encoded_ex_appendix)
+        print(binstrip(encoded_ex_appendix))
+        bitseq = insert_bits(encoded_ex_appendix, {
+            first: lin[0],
+            second: lin[1]
+        })
+        print(bitseq)
+        return bitseq
+
+    def decode_mod_square(self, square, first_bit_pos,
+                          second_bit_pos) -> Tuple[int, int]:
+        # TODO change it to masks and shifts
+        # this just a fast solution
+        bits = list("".join(binstrip(byte).zfill(8) for byte in square))
+
+        second_bit = bits[second_bit_pos]
+        first_bit = bits.pop(first_bit_pos)
+        bits.pop(second_bit_pos)
+        leftovers = int((first_bit + second_bit), 2) % 3  # 11 and 00 both 0
+        encoded = int("".join(bits), 2)
+        print(binstrip(encoded))
+        print(encoded)
+
+        decoded_ex_appendix = (encoded ^ self.gen()) & 0x3fffff
+        print(decoded_ex_appendix)
+
+        return leftovers, decoded_ex_appendix
 
     def calc_mod_bits_positions(self):
         """return position of bits in the mod_square that hold
@@ -85,14 +119,6 @@ class Rothko():
         """just a conviencince methods that return next xorshift gen yield"""
         return next(self.xor_gen)
 
-    def encode_mod_square(self, appendix):
-        appendix -= 1  # excluding mod square which is a part of appendix
-        first_bit = self.gen() % 24  # 3*8 bits to choose from
-        second_bit = self.gen() % 24
-        if second_bit == first_bit:  #  make sure bits are distinct
-            second_bit = (first_bit + 1 % 24)
-        div = self.gen() % 24
-
     @staticmethod
     def xorshitf(seed: int):
         seed &= 0xFFFFFFFF
@@ -101,7 +127,3 @@ class Rothko():
             seed ^= np.right_shift(seed, 17)
             seed ^= np.left_shift(seed, 5)
             yield seed
-
-
-if __name__ == "__main__":
-    r = Rothko("dsfdsdfsdf").encode("keuffwe23fwfsdj")
