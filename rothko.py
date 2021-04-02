@@ -5,6 +5,7 @@ import random
 from math import ceil, sqrt
 from PIL import Image
 from typing import Tuple
+from collections import deque
 
 
 def binstrip(num: int):
@@ -19,7 +20,7 @@ def calc_square_edge(encoded_len: int):
 def create_pixel_array(encoded, edge: int, appendix: int):
     arr = np.asarray(encoded, dtype=np.uint8)
     arr = np.append(arr, np.random.randint(0, 256, appendix))
-    arr.resize(edge, edge, 3)
+    arr.resize(edge * edge, 3)
     return arr
 
 
@@ -51,7 +52,10 @@ def assemble_mod_square(bitseq: str):
 
 class Rothko():
     """creates colorful squares off given secret msg and key
-    unless the user provided a dull msg :f """
+    unless the user provided a dull msg :f"""
+
+    max_shuffles = 250
+
     def __init__(self, key):
         self.rc = RC4(key)
         self.xor_gen = self.xorshitf(sum(ord(c) for c in key) * len(key))
@@ -64,10 +68,23 @@ class Rothko():
         edge = calc_square_edge(len(encoded))
         appendix = edge**2 * 3 - len(encoded)
         ex_appendix = appendix - 1
+        # mod_square_position = self.gen() % edge**2
+
         self.arr = create_pixel_array(encoded, edge, appendix)
+        print(self.arr)
         mod_square = assemble_mod_square(
             self.encode_mod_square(ex_appendix, leftovers))
-        mod_square_position = self.gen() % edge**2
+
+        self.shuffle_squares()
+        print(self.arr)
+
+    def decode(self, arr):
+        self.arr = arr
+        self.gen()
+        self.gen()
+        self.gen()
+        self.deshuffe_squares()
+
 
     def encode_mod_square(self, ex_appendix, leftovers):
         """Prepares and encodes information in the mod square
@@ -78,13 +95,10 @@ class Rothko():
             ("00", "11"))
         first, second = self.calc_mod_bits_positions()
         encoded_ex_appendix = (ex_appendix ^ self.gen()) & 0x3fffff
-        print(lin)
-        print(binstrip(encoded_ex_appendix))
         bitseq = insert_bits(encoded_ex_appendix, {
             first: lin[0],
             second: lin[1]
         })
-        print(bitseq)
         return bitseq
 
     def decode_mod_square(self, square, first_bit_pos,
@@ -103,10 +117,37 @@ class Rothko():
         leftovers = int((first_bit + second_bit), 2) % 3  # 11 and 00 both 0
         encoded = int("".join(bits), 2)
 
-        print(binstrip(encoded))
         decoded_ex_appendix = (encoded ^ self.gen()) & 0x3fffff
 
         return leftovers, decoded_ex_appendix
+
+    def calc_shuffling_amount(self, dim) -> int:
+        return min(dim // 5, self.max_shuffles)
+
+    def shuffle_squares(self):
+        dim, *_ = self.arr.shape
+        for i in range(self.calc_shuffling_amount(dim) - 1, -1, -1):
+            ix = i % dim
+            rand = self.gen() % dim
+            print(ix, rand)
+            self.swap_arr(ix, rand)
+
+
+    def deshuffe_squares(self):
+        dim, *_ = self.arr.shape
+        iterations = self.calc_shuffling_amount(dim)
+        swap_stack = deque(self.gen() % dim for _ in range(iterations))
+        for i in range(iterations):
+            ix = i % dim
+            rand = swap_stack.pop()
+            print(ix, rand)
+            self.swap_arr(ix, rand)
+
+    def swap_arr(self, i, j):
+        # usual python swapping doesnt work with numpy views
+        tmp = np.copy(self.arr[i])
+        self.arr[i] = self.arr[j]
+        self.arr[j] = tmp
 
     def calc_mod_bits_positions(self):
         """return position of bits in the mod_square that hold
@@ -130,3 +171,13 @@ class Rothko():
             seed ^= np.right_shift(seed, 17)
             seed ^= np.left_shift(seed, 5)
             yield seed
+
+
+if __name__ == "__main__":
+    r = Rothko("simple key")
+    out = r.encode("djsoidjiowjeiodfjweifojweiofj")
+    r2 = Rothko("simple key")
+    r2.decode(r.arr)
+    print(r2.arr)
+
+
