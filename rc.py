@@ -1,7 +1,7 @@
 #!/usr/bin/env/ python3
-"""This module contains the Rothko class which handles the encryption"""
+"""This module contains the RC4 class which handles the encryption"""
 
-from typing import Iterator, List
+from typing import List, Generator
 # always to square
 
 
@@ -13,9 +13,9 @@ class RC4():
 
     def encode(self, msg: str):
         "API encode"
-        return self._encode([char for char in bytearray(msg, encoding="utf8")])
+        return self._encode(bytearray(msg, encoding="utf8"))
 
-    def _encode(self, ord_msg_gen: List[int]) -> List[int]:
+    def _encode(self, ord_msg_gen) -> List[int]:
         """private encode"""
         pr_gen = self.prgen(len(ord_msg_gen))
         return [p ^ o for p, o in zip(pr_gen, ord_msg_gen)]
@@ -37,7 +37,7 @@ class RC4():
     def swap(self, i, j):
         self.sb[i], self.sb[j] = self.sb[j], self.sb[i]
 
-    def prgen(self, msg_len: int) -> Iterator[int]:
+    def prgen(self, msg_len: int) -> Generator[int, None, None]:
         "pseudo-random generation"
         s = self.sb
         i, j = 0, 0
