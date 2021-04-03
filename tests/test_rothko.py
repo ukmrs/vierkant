@@ -1,6 +1,8 @@
+import pytest
 from rothko import (calc_square_edge, Rothko, insert_bits, assemble_mod_square)
 from itertools import cycle
 import numpy as np
+from PIL import Image
 
 
 class DbgRothko(Rothko):
@@ -86,3 +88,47 @@ def test_encode_decode_mod_square():
     ed_mod_square_helper(1048547, 2, "s1r431]\n\trf")
     ed_mod_square_helper(5, 0, "s1r431rf")
     ed_mod_square_helper(5325, 1, "dfsq")
+
+
+# --- test encode decode ---
+
+# whitespace, weird, simple and 256 bytes
+KEYS = ("\t\n \t\n"
+        "some\tthing\n eles Qqę2πśð„’ę©something", "simple key",
+        "".join(chr(i) for i in range(200, 456)))
+
+
+def ed_helper(original):  # ed feels unfortunate because of certain dysfunction
+    for key in KEYS:
+        encoded = Rothko(key).encode(original)
+        assert original == Rothko(key).decode(encoded)
+
+
+def test_ed_d():
+    original = 'abcf'
+    ed_helper(original)
+
+
+def test_ed_weird():
+    original = 'tes#^TEŋ ęß©t\n\tπś535ææœ ’æŋ’ðð’©ęþ'
+    ed_helper(original)
+
+
+def test_ed_simple():
+    ed_helper("simple secret message")
+
+
+def test_to_img_and_back():
+    msg = "something interesting"
+    r = Rothko("somekey")
+    r.encode(msg)
+    img = Image.fromarray(r.arr)
+    r = Rothko("somekey").decode(np.asarray(img).copy())
+    assert msg == r
+
+
+@pytest.mark.slow
+def test_ed_highunicode():
+    """unicode characters except control/ASCII/Latin up to
+    high surrogate weirdness"""
+    ed_helper("".join(chr(i) for i in range(161, 55290)))

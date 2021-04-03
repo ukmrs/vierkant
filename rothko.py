@@ -19,13 +19,9 @@ def calc_square_edge(encoded_len: int):
 
 def create_pixel_array(encoded, edge: int, appendix: int):
     arr = np.asarray(encoded, dtype=np.uint8)
-    arr = np.append(arr, np.random.randint(0, 256, appendix))
+    arr = np.append(arr, np.random.randint(0, 256, appendix, dtype=np.uint8))
     arr.resize(edge * edge, 3)
     return arr
-
-
-def calc_encoded_ex_appendix(ex_appendix, xored):
-    return ex_appendix ^ xored & 0x3fffff
 
 
 def insert_bits(original: int, bits: dict):
@@ -67,7 +63,12 @@ class Rothko():
         self.shuffle_squares()
         dimension = int(sqrt(self.arr.shape[0]))
         self.arr.resize(dimension, dimension, 3)
+        self.xor_gen.close()  # closing inf generator for peace of mind
         return self.arr
+
+    def to_img(self):
+        img = Image.fromarray(self.arr)
+        img.save("picture.png")
 
     def decode(self, arr):
         first, second = self.calc_mod_bits_positions()
@@ -77,10 +78,11 @@ class Rothko():
         self.arr.resize(dim, 3)
         self.deshuffe_squares()
         mod_square = self.arr[-1].copy()
-        leftovers, ex_appendix = self.decode_mod_square(
-            mod_square, first, second, ex_appendix_key)
+        _, ex_appendix = self.decode_mod_square(mod_square, first, second,
+                                                ex_appendix_key)
         self.arr.resize(dim * 3)
-        print(self.arr)
+        a = ex_appendix + 1
+        return self.rc.decode(self.arr[:-a])
 
     def init_array(self, secret):
         encoded = np.asarray(self.rc.encode(secret), dtype=np.uint8)
@@ -108,7 +110,8 @@ class Rothko():
         })
         return bitseq
 
-    def decode_mod_square(self, square, first_bit_pos, second_bit_pos,
+    @staticmethod
+    def decode_mod_square(square, first_bit_pos, second_bit_pos,
                           ex_appendix_key) -> Tuple[int, int]:
         # TODO change it is so its not hacky
         # shifts and masks for instance
@@ -132,11 +135,12 @@ class Rothko():
         return min(dim // 3 + 2, self.max_shuffles)
 
     def shuffle_squares(self):
+        # todo shuffle functions suck
         dim, *_ = self.arr.shape
         for i in range(self.calc_shuffling_amount(dim) - 1, -1, -1):
             ix = i % dim
             rand = self.gen() % dim
-            self.swap_arr(ix, rand)
+            self.swap_arr_row(ix, rand)
 
     def deshuffe_squares(self):
         dim, *_ = self.arr.shape
@@ -145,9 +149,9 @@ class Rothko():
         for i in range(iterations):
             ix = i % dim
             rand = swap_stack.pop()
-            self.swap_arr(ix, rand)
+            self.swap_arr_row(ix, rand)
 
-    def swap_arr(self, i, j):
+    def swap_arr_row(self, i, j):
         # usual python swapping doesnt work with numpy views
         tmp = np.copy(self.arr[i])
         self.arr[i] = self.arr[j]
@@ -178,8 +182,4 @@ class Rothko():
 
 
 if __name__ == "__main__":
-    key = "ðæśądddw\n\tdfs\t  \nfsf"
-    out = RC4("simple").encode(key)
-    print(out)
-    rrr = Rothko("simple").encode(key)
-    ooo = Rothko("simple").decode(rrr)
+    pass
