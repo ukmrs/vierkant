@@ -63,17 +63,23 @@ class Rothko():
         self.arr = None
 
     def encode(self, secret):
-        encoded = np.asarray(self.rc.encode(secret), dtype=np.uint8)
-        leftovers = len(encoded) % 3
-        edge = calc_square_edge(len(encoded))
-        appendix = edge**2 * 3 - len(encoded)
-        ex_appendix = appendix - 1
-        self.arr = create_pixel_array(encoded, edge, appendix)
-        print(self.arr)
-        mod_square = assemble_mod_square(
-            self.encode_mod_square(ex_appendix, leftovers))
-
+        self.init_array(secret)
         self.shuffle_squares()
+        dimension = int(sqrt(self.arr.shape[0]))
+        self.arr.resize(dimension, dimension, 3)
+        return self.arr
+
+    def decode(self, arr):
+        first, second = self.calc_mod_bits_positions()
+        ex_appendix_key = self.gen()
+        self.arr = arr
+        dim = int(self.arr.shape[0]**2)
+        self.arr.resize(dim, 3)
+        self.deshuffe_squares()
+        mod_square = self.arr[-1].copy()
+        leftovers, ex_appendix = self.decode_mod_square(
+            mod_square, first, second, ex_appendix_key)
+        self.arr.resize(dim * 3)
         print(self.arr)
 
     def init_array(self, secret):
@@ -86,13 +92,6 @@ class Rothko():
         mod_square = assemble_mod_square(
             self.encode_mod_square(ex_appendix, leftovers))
         self.arr[-1] = mod_square
-
-    def decode(self, arr):
-        self.arr = arr
-        self.gen()
-        self.gen()
-        self.gen()
-        self.deshuffe_squares()
 
     def encode_mod_square(self, ex_appendix, leftovers):
         """Prepares and encodes information in the mod square
@@ -109,8 +108,8 @@ class Rothko():
         })
         return bitseq
 
-    def decode_mod_square(self, square, first_bit_pos,
-                          second_bit_pos) -> Tuple[int, int]:
+    def decode_mod_square(self, square, first_bit_pos, second_bit_pos,
+                          ex_appendix_key) -> Tuple[int, int]:
         # TODO change it is so its not hacky
         # shifts and masks for instance
         bits = list("".join(binstrip(byte).zfill(8) for byte in square))
@@ -125,7 +124,7 @@ class Rothko():
         leftovers = int((first_bit + second_bit), 2) % 3  # 11 and 00 both 0
         encoded = int("".join(bits), 2)
 
-        decoded_ex_appendix = (encoded ^ self.gen()) & 0x3fffff
+        decoded_ex_appendix = (encoded ^ ex_appendix_key) & 0x3fffff
 
         return leftovers, decoded_ex_appendix
 
@@ -137,9 +136,7 @@ class Rothko():
         for i in range(self.calc_shuffling_amount(dim) - 1, -1, -1):
             ix = i % dim
             rand = self.gen() % dim
-            print(ix, rand)
             self.swap_arr(ix, rand)
-        print(self.arr)
 
     def deshuffe_squares(self):
         dim, *_ = self.arr.shape
@@ -148,9 +145,7 @@ class Rothko():
         for i in range(iterations):
             ix = i % dim
             rand = swap_stack.pop()
-            print(ix, rand)
             self.swap_arr(ix, rand)
-        print("deshuffled\n", self.arr)
 
     def swap_arr(self, i, j):
         # usual python swapping doesnt work with numpy views
@@ -183,25 +178,8 @@ class Rothko():
 
 
 if __name__ == "__main__":
-
-    class DbgRothko(Rothko):
-        def __init__(self, *args, **kwargs):
-            self.gens = 0
-            super().__init__(*args, **kwargs)
-
-        def gen(self):
-            self.gens += 1
-            return super().gen()
-
-    r = DbgRothko("simple key")
-    out = r.init_array("msgæəð→ə„")
-    before_shuffle = r.arr
-
-    r2 = DbgRothko("simple key")
-    for i in range(r.gens - r2.gens):
-        r2.gen()
-    assert r2.gens == r.gens
-    r.shuffle_squares()
-    r2.arr = r.arr.copy()
-    r2.deshuffe_squares()
-    assert (before_shuffle == r2.arr).copy
+    key = "ðæśądddw\n\tdfs\t  \nfsf"
+    out = RC4("simple").encode(key)
+    print(out)
+    rrr = Rothko("simple").encode(key)
+    ooo = Rothko("simple").decode(rrr)
