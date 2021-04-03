@@ -18,7 +18,7 @@ class DbgRothko(Rothko):
 def shuffle_deshuffle_helper(key, secret):
     shuffler, deshuffler = DbgRothko(key), DbgRothko(key)
     shuffler.init_array(secret)
-    before_shuffle = shuffler.arr
+    before_shuffle = shuffler.arr.copy()
     # get generators in sync as deshuffler
     # skips some steps
     for _ in range(shuffler.gens - deshuffler.gens):

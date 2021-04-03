@@ -6,6 +6,7 @@ from math import ceil, sqrt
 from PIL import Image
 from typing import Tuple
 from collections import deque
+from itertools import cycle
 
 
 def binstrip(num: int):
@@ -82,6 +83,7 @@ class Rothko():
                                                 ex_appendix_key)
         self.arr.resize(dim * 3)
         a = ex_appendix + 1
+        print(a)
         return self.rc.decode(self.arr[:-a])
 
     def init_array(self, secret):
@@ -94,6 +96,7 @@ class Rothko():
         mod_square = assemble_mod_square(
             self.encode_mod_square(ex_appendix, leftovers))
         self.arr[-1] = mod_square
+        print("preshuffle\n", self.arr)
 
     def encode_mod_square(self, ex_appendix, leftovers):
         """Prepares and encodes information in the mod square
@@ -132,24 +135,39 @@ class Rothko():
         return leftovers, decoded_ex_appendix
 
     def calc_shuffling_amount(self, dim) -> int:
-        return min(dim // 3 + 2, self.max_shuffles)
+        amount = dim // 3 + 15
+        return min(amount, self.max_shuffles)
+
+    def shuffle_core(self, dim, rng, shift, *args):
+        """
+        dim = amount of rows
+        rng = function generating random numbers
+        args = passed to range()
+        shift = in bool generator 0 to 2
+        """
+        tmp = [True, True, True]
+        tmp[shift] = False
+        for i, col_time in zip(range(*args), cycle(tmp)):
+            if col_time:
+                ix = i % dim
+                rand = rng() % dim
+                self.swap_arr_row(ix, rand)
+            else:
+                ix = i % 3
+                rand = rng() % 3
+                self.swap_arr_column(ix, rand)
 
     def shuffle_squares(self):
-        # todo shuffle functions suck
         dim, *_ = self.arr.shape
-        for i in range(self.calc_shuffling_amount(dim) - 1, -1, -1):
-            ix = i % dim
-            rand = self.gen() % dim
-            self.swap_arr_row(ix, rand)
+        self.shuffle_core(dim, self.gen, 2,
+                          self.calc_shuffling_amount(dim) - 1, -1, -1)
 
     def deshuffe_squares(self):
         dim, *_ = self.arr.shape
         iterations = self.calc_shuffling_amount(dim)
-        swap_stack = deque(self.gen() % dim for _ in range(iterations))
-        for i in range(iterations):
-            ix = i % dim
-            rand = swap_stack.pop()
-            self.swap_arr_row(ix, rand)
+        shift = iterations % 3
+        swap_stack = deque(self.gen() for _ in range(iterations))
+        self.shuffle_core(dim, swap_stack.pop, shift, iterations)
 
     def swap_arr_row(self, i, j):
         self.arr[[i, j]] = self.arr[[j, i]]
