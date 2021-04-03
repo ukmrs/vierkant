@@ -152,10 +152,10 @@ class Rothko():
             self.swap_arr_row(ix, rand)
 
     def swap_arr_row(self, i, j):
-        # usual python swapping doesnt work with numpy views
-        tmp = np.copy(self.arr[i])
-        self.arr[i] = self.arr[j]
-        self.arr[j] = tmp
+        self.arr[[i, j]] = self.arr[[j, i]]
+
+    def swap_arr_column(self, i, j):
+        self.arr[:, [i, j]] = self.arr[:, [j, i]]
 
     def calc_mod_bits_positions(self):
         """return position of bits in the mod_square that hold
