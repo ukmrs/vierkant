@@ -1,7 +1,40 @@
-from rothko import (calc_square_edge, Rothko, insert_bits,
-                    assemble_mod_square)
+from rothko import (calc_square_edge, Rothko, insert_bits, assemble_mod_square)
 from itertools import cycle
 import numpy as np
+
+
+class DbgRothko(Rothko):
+    def __init__(self, *args, **kwargs):
+        self.gens = 0
+        super().__init__(*args, **kwargs)
+
+    def gen(self):
+        self.gens += 1
+        return super().gen()
+
+
+def shuffle_deshuffle_helper(key, secret):
+    shuffler, deshuffler = DbgRothko(key), DbgRothko(key)
+    shuffler.init_array(secret)
+    before_shuffle = shuffler.arr
+    # get generators in sync as deshuffler
+    # skips some steps
+    for _ in range(shuffler.gens - deshuffler.gens):
+        deshuffler.gen()
+    assert deshuffler.gens == shuffler.gens
+
+    # copy shuffled array, deshuffle it and compare to original
+    shuffler.shuffle_squares()
+    deshuffler.arr = shuffler.arr.copy()
+    deshuffler.deshuffe_squares()
+    assert (before_shuffle == deshuffler.arr).copy
+
+
+def test_shuffle_deshuflle():
+    shuffle_deshuffle_helper("simple", 'I enjoy Carly Rae Jepsen "Emotion"')
+    shuffle_deshuffle_helper("longer\nkey2²©€½", 'ᖮᖯᖰᖱᖲᖳᖴᖵᖶᖷ')
+    shuffle_deshuffle_helper("łə…yy",
+                             ''.join(chr(i) for i in range(5000, 5400)))
 
 
 def insert_helper(original, hashmap):
@@ -36,8 +69,7 @@ def test_assemble_mod_square():
 
 
 def encode_decode_helper(appendix, leftovers, key):
-    r1 = Rothko(key)
-    r2 = Rothko(key)
+    r1, r2 = Rothko(key), Rothko(key)
     out = assemble_mod_square(r1.encode_mod_square(appendix, leftovers))
     pos1, pos2 = r2.calc_mod_bits_positions()
     lft, a = r2.decode_mod_square(out, pos1, pos2)
@@ -49,9 +81,7 @@ def encode_decode_helper(appendix, leftovers, key):
 
 def test_encode_decode_mod_square():
     encode_decode_helper(10332, 2, "a key of sorts")
-    encode_decode_helper(999999, 1, "dfsfsdf 232")
+    encode_decode_helper(0, 1, "dfsfsdf 232")
     encode_decode_helper(1048547, 2, "s1r431]\n\trf")
     encode_decode_helper(5, 0, "s1r431rf")
     encode_decode_helper(5325, 1, "dfsq")
-
-

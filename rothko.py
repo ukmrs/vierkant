@@ -68,8 +68,6 @@ class Rothko():
         edge = calc_square_edge(len(encoded))
         appendix = edge**2 * 3 - len(encoded)
         ex_appendix = appendix - 1
-        # mod_square_position = self.gen() % edge**2
-
         self.arr = create_pixel_array(encoded, edge, appendix)
         print(self.arr)
         mod_square = assemble_mod_square(
@@ -78,13 +76,23 @@ class Rothko():
         self.shuffle_squares()
         print(self.arr)
 
+    def init_array(self, secret):
+        encoded = np.asarray(self.rc.encode(secret), dtype=np.uint8)
+        leftovers = len(encoded) % 3
+        edge = calc_square_edge(len(encoded))
+        appendix = edge**2 * 3 - len(encoded)
+        ex_appendix = appendix - 1
+        self.arr = create_pixel_array(encoded, edge, appendix)
+        mod_square = assemble_mod_square(
+            self.encode_mod_square(ex_appendix, leftovers))
+        self.arr[-1] = mod_square
+
     def decode(self, arr):
         self.arr = arr
         self.gen()
         self.gen()
         self.gen()
         self.deshuffe_squares()
-
 
     def encode_mod_square(self, ex_appendix, leftovers):
         """Prepares and encodes information in the mod square
@@ -122,7 +130,7 @@ class Rothko():
         return leftovers, decoded_ex_appendix
 
     def calc_shuffling_amount(self, dim) -> int:
-        return min(dim // 5, self.max_shuffles)
+        return min(dim // 3 + 2, self.max_shuffles)
 
     def shuffle_squares(self):
         dim, *_ = self.arr.shape
@@ -131,7 +139,7 @@ class Rothko():
             rand = self.gen() % dim
             print(ix, rand)
             self.swap_arr(ix, rand)
-
+        print(self.arr)
 
     def deshuffe_squares(self):
         dim, *_ = self.arr.shape
@@ -142,6 +150,7 @@ class Rothko():
             rand = swap_stack.pop()
             print(ix, rand)
             self.swap_arr(ix, rand)
+        print("deshuffled\n", self.arr)
 
     def swap_arr(self, i, j):
         # usual python swapping doesnt work with numpy views
@@ -174,10 +183,25 @@ class Rothko():
 
 
 if __name__ == "__main__":
-    r = Rothko("simple key")
-    out = r.encode("djsoidjiowjeiodfjweifojweiofj")
-    r2 = Rothko("simple key")
-    r2.decode(r.arr)
-    print(r2.arr)
 
+    class DbgRothko(Rothko):
+        def __init__(self, *args, **kwargs):
+            self.gens = 0
+            super().__init__(*args, **kwargs)
 
+        def gen(self):
+            self.gens += 1
+            return super().gen()
+
+    r = DbgRothko("simple key")
+    out = r.init_array("msgæəð→ə„")
+    before_shuffle = r.arr
+
+    r2 = DbgRothko("simple key")
+    for i in range(r.gens - r2.gens):
+        r2.gen()
+    assert r2.gens == r.gens
+    r.shuffle_squares()
+    r2.arr = r.arr.copy()
+    r2.deshuffe_squares()
+    assert (before_shuffle == r2.arr).copy
