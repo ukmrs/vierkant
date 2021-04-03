@@ -25,22 +25,8 @@ def create_pixel_array(encoded, edge: int, appendix: int):
     return arr
 
 
-def insert_bits(original: int, bits: dict):
-    out = ""
-    shift = 0
-    for bl in binstrip(original).zfill(22):
-        while shift in bits:
-            out += bits[shift]
-            shift += 1
-        out += bl
-        shift += 1
-    while shift in bits:
-        out += bits[shift]
-        shift += 1
-    return out
-
-
 def assemble_mod_square(bitseq: str):
+    bitseq = bitseq.zfill(24)
     mod_square = np.zeros(3, dtype=np.uint8)
     for i in range(0, len(bitseq), 8):
         mod_square[i // 8] = int(bitseq[i:i + 8], 2)
@@ -72,15 +58,13 @@ class Rothko():
         img.save("picture.png")
 
     def decode(self, arr):
-        first, second = self.calc_mod_bits_positions()
         ex_appendix_key = self.gen()
         self.arr = arr
         dim = int(self.arr.shape[0]**2)
         self.arr.resize(dim, 3)
         self.deshuffe_squares()
         mod_square = self.arr[-1].copy()
-        _, ex_appendix = self.decode_mod_square(mod_square, first, second,
-                                                ex_appendix_key)
+        ex_appendix = self.decode_mod_square(mod_square, ex_appendix_key)
         self.arr.resize(dim * 3)
         a = ex_appendix + 1
         print(a)
@@ -88,51 +72,31 @@ class Rothko():
 
     def init_array(self, secret):
         encoded = np.asarray(self.rc.encode(secret), dtype=np.uint8)
-        leftovers = len(encoded) % 3
         edge = calc_square_edge(len(encoded))
         appendix = edge**2 * 3 - len(encoded)
         ex_appendix = appendix - 1
         self.arr = create_pixel_array(encoded, edge, appendix)
-        mod_square = assemble_mod_square(
-            self.encode_mod_square(ex_appendix, leftovers))
+        mod_square = assemble_mod_square(self.encode_mod_square(ex_appendix))
         self.arr[-1] = mod_square
+        print(mod_square)
         print("preshuffle\n", self.arr)
 
-    def encode_mod_square(self, ex_appendix, leftovers):
-        """Prepares and encodes information in the mod square
-        about the amount of non-significant random squares
-        called here ex_appendix and the amount of leftovers"""
-
-        lin = binstrip(leftovers).zfill(2) if leftovers else random.choice(
-            ("00", "11"))
-        first, second = self.calc_mod_bits_positions()
-        encoded_ex_appendix = (ex_appendix ^ self.gen()) & 0x3fffff
-        bitseq = insert_bits(encoded_ex_appendix, {
-            first: lin[0],
-            second: lin[1]
-        })
-        return bitseq
+    def encode_mod_square(self, ex_appendix):
+        encoded_ex_appendix = (ex_appendix ^ self.gen()) & 0xffffff
+        print(binstrip(encoded_ex_appendix))
+        return binstrip(encoded_ex_appendix)
 
     @staticmethod
-    def decode_mod_square(square, first_bit_pos, second_bit_pos,
-                          ex_appendix_key) -> Tuple[int, int]:
+    def decode_mod_square(square, ex_appendix_key) -> int:
         # TODO change it is so its not hacky
         # shifts and masks for instance
-        bits = list("".join(binstrip(byte).zfill(8) for byte in square))
+        encoded = [binstrip(byte).zfill(8) for byte in square]
+        print(encoded)
+        encoded = ''.join(encoded)
+        encoded = int(encoded, 2)
 
-        if first_bit_pos > second_bit_pos:
-            first_bit = bits.pop(first_bit_pos)
-            second_bit = bits.pop(second_bit_pos)
-        else:
-            second_bit = bits.pop(second_bit_pos)
-            first_bit = bits.pop(first_bit_pos)
-
-        leftovers = int((first_bit + second_bit), 2) % 3  # 11 and 00 both 0
-        encoded = int("".join(bits), 2)
-
-        decoded_ex_appendix = (encoded ^ ex_appendix_key) & 0x3fffff
-
-        return leftovers, decoded_ex_appendix
+        decoded_ex_appendix = (encoded ^ ex_appendix_key) & 0xffffff
+        return decoded_ex_appendix
 
     def calc_shuffling_amount(self, dim) -> int:
         amount = dim // 3 + 15
@@ -200,4 +164,12 @@ class Rothko():
 
 
 if __name__ == "__main__":
+    key = 'a key of sorts'
+    appendix = 1032
+    r1, r2 = Rothko(key), Rothko(key)
+    out = assemble_mod_square(r1.encode_mod_square(appendix))
+    print(out)
+    ex_appendix_key = r2.gen()
+    a = r2.decode_mod_square(out, 0, 0, ex_appendix_key)
+    print(appendix, a)
     pass

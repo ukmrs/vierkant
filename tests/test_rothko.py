@@ -1,5 +1,5 @@
 import pytest
-from rothko import (calc_square_edge, Rothko, insert_bits, assemble_mod_square)
+from rothko import (calc_square_edge, Rothko, assemble_mod_square)
 from itertools import cycle
 import numpy as np
 from PIL import Image
@@ -39,20 +39,6 @@ def test_shuffle_deshuflle():
                              ''.join(chr(i) for i in range(5000, 5400)))
 
 
-def insert_helper(original, hashmap):
-    out = insert_bits(original, hashmap)
-    for k, v in hashmap.items():
-        assert out[k] == v
-
-
-def test_instert_bits():
-    insert_helper(0b11111, {0: "1", 6: "0"})
-    insert_helper(0b11111, {0: "0", 6: "0"})
-    insert_helper(0b10001, {7: "0", 6: "1", 5: "0"})
-    insert_helper(2555, {0: "1", 1: "0", 3: "1", 5: "0"})
-    insert_helper(2**50, {k: v for k, v in zip(range(0, 53, 2), cycle('01'))})
-
-
 def test_sq_edge():
     assert calc_square_edge(1) == 2
     assert calc_square_edge(9) == 2
@@ -70,24 +56,22 @@ def test_assemble_mod_square():
     assert (mn == np.array([0, 0, 0])).all()  # type: ignore
 
 
-def ed_mod_square_helper(appendix, leftovers, key):
-    r1, r2 = Rothko(key), Rothko(key)
-    out = assemble_mod_square(r1.encode_mod_square(appendix, leftovers))
-    pos1, pos2 = r2.calc_mod_bits_positions()
+def ed_mod_square_helper(appendix, key):
+    r1, r2 = DbgRothko(key), DbgRothko(key)
+    out = assemble_mod_square(r1.encode_mod_square(appendix))
     ex_appendix_key = r2.gen()
-    lft, a = r2.decode_mod_square(out, pos1, pos2, ex_appendix_key)
+    a = r2.decode_mod_square(out, ex_appendix_key)
 
-    assert r1.gen() == r2.gen()
+    assert r1.gens == r2.gens
     assert appendix == a
-    assert lft == leftovers
 
 
 def test_encode_decode_mod_square():
-    ed_mod_square_helper(10332, 2, "a key of sorts")
-    ed_mod_square_helper(0, 1, "dfsfsdf 232")
-    ed_mod_square_helper(1048547, 2, "s1r431]\n\trf")
-    ed_mod_square_helper(5, 0, "s1r431rf")
-    ed_mod_square_helper(5325, 1, "dfsq")
+    ed_mod_square_helper(10332, "a key of sorts")
+    ed_mod_square_helper(0, "dfsfsdf 232")
+    ed_mod_square_helper(1048547, "s1r431]\n\trf")
+    ed_mod_square_helper(5, "s1r431rf")
+    ed_mod_square_helper(5325, "dfsq")
 
 
 # --- test encode decode ---
