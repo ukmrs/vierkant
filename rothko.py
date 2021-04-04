@@ -19,6 +19,7 @@ def calc_square_edge(encoded_len: int):
 
 def create_pixel_array(encoded, edge: int, appendix: int):
     arr = np.asarray(encoded, dtype=np.uint8)
+    # TODO make this deterministic with seeding
     arr = np.append(arr, np.random.randint(0, 256, appendix, dtype=np.uint8))
     arr.resize(edge * edge, 3)
     return arr
@@ -154,18 +155,8 @@ class Rothko():
     def swap_arr_column(self, i, j):
         self.arr[:, [i, j]] = self.arr[:, [j, i]]
 
-    def calc_mod_bits_positions(self):
-        """return position of bits in the mod_square that hold
-        information about leftovers. the mod square is 3bytes
-        so there are 24 positions for bits"""
-        first_bit = self.gen() % 24
-        second_bit = self.gen() % 24
-        if second_bit == first_bit:
-            second_bit = (first_bit + 1 % 24)
-        return first_bit, second_bit
-
     def gen(self):
-        """just a conviencince methods that return next xorshift gen yield"""
+        """convenience method that returns next xorshift gen yield"""
         return next(self.xor_gen)
 
     @staticmethod
