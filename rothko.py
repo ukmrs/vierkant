@@ -59,8 +59,8 @@ class Rothko():
             return img
         return Image.fromarray(self.arr)
 
-    def decode_from_img(self, image_path):
-        img = PngImageFile(image_path)
+    def decode_from_img(self, file):
+        img = PngImageFile(fp=file)
         try:
             edge = img.text["edge"]
         except KeyError:
@@ -175,8 +175,7 @@ if __name__ == "__main__":
     # img.save("picture.png")
 
     scaled_down = img.resize((3, 3), Image.NEAREST)
-    print(np.asarray(scaled_down))
-
     a = PngImageFile("picture.png")
-    print(a.text)
-    print(Rothko("key").decode_from_img("p2.png"))
+    # print(a.text)
+    with open("p2.png", "rb") as f:
+        print(Rothko("klucz").decode_from_img(f))
