@@ -42,6 +42,7 @@ class Rothko():
 
     max_shuffles = 250
     max_scale_up = 500
+    temp_name = "picture.png"
 
     def __init__(self, key):
         self.rc = RC4(key)
@@ -59,12 +60,28 @@ class Rothko():
 
     def encode_to_img(self, secret, scale=False):
         self.encode(secret)
-        if scale:
-            edge, *_ = self.arr.shape
-            s = edge * max(self.max_scale_up // edge, 1)
+        edge, *_ = self.arr.shape
+        if scale and (scale_up := (self.max_scale_up // edge)) > 1:
+            s = edge * scale_up
             img = Image.fromarray(self.arr).resize((s, s), Image.NEAREST)
+            meta = PngInfo()
+            meta.add_text("edge", str(edge))
+            img.save(self.temp_name, pnginfo=meta)
             return img
         return Image.fromarray(self.arr)
+
+    def decode_from_img(self, image_path):
+        img = PngImageFile(image_path)
+        try:
+            edge = img.text["edge"]
+        except KeyError:
+            pass
+        else:
+            edge = int(edge)
+            img = img.resize((edge, edge), resample=Image.NEAREST)
+
+        # asarray creates readonly hence the np.array
+        return self.decode(np.array(img))
 
     def decode(self, arr):
         appendix_key = self.gen()
@@ -163,12 +180,14 @@ class Rothko():
 
 if __name__ == "__main__":
     # msg = "".join(chr(i) for i in range(161, 55290))
-    msg = "dsfsfwefwefwefj"
-    key = "simple key"
+    msg = "\n\tI am not happy\n\tand\n\tI am not sad\n"
+    key = "krówka"
     img = Rothko(key).encode_to_img(msg, scale=True)
-    img.save("picture.png")
+    # img.save("picture.png")
 
     scaled_down = img.resize((3, 3), Image.NEAREST)
     print(np.asarray(scaled_down))
 
-    pass
+    a = PngImageFile("picture.png")
+    print(a.text)
+    print(Rothko(key).decode_from_img("picture.png"))
