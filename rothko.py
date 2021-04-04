@@ -17,24 +17,12 @@ def calc_square_edge(encoded_len: int):
     return ceil(sqrt(pixel_amount))
 
 
-def create_pixel_array(encoded, edge: int, appendix: int):
-    arr = np.asarray(encoded, dtype=np.uint8)
-    # TODO make this deterministic with seeding
-    arr = np.append(arr, np.random.randint(0, 256, appendix, dtype=np.uint8))
-    arr.resize(edge * edge, 3)
-    return arr
-
-
 def assemble_mod_square(bitseq: str):
     bitseq = bitseq.zfill(24)
     mod_square = np.zeros(3, dtype=np.uint8)
     for i in range(0, len(bitseq), 8):
         mod_square[i // 8] = int(bitseq[i:i + 8], 2)
     return mod_square
-
-
-def scale_up(arr, n):
-    return np.kron(arr, np.ones((n, n, 3), dtype=np.uint8))
 
 
 class Rothko():
@@ -86,6 +74,7 @@ class Rothko():
 
     def decode(self, arr):
         appendix_key = self.gen()
+        self.gen()
         self.arr = arr
         dim = int(self.arr.shape[0]**2)
         self.arr.resize(dim, 3)
@@ -100,9 +89,18 @@ class Rothko():
         encoded = np.asarray(self.rc.encode(secret), dtype=np.uint8)
         edge = calc_square_edge(len(encoded))
         appendix = edge**2 * 3 - len(encoded)
-        self.arr = create_pixel_array(encoded, edge, appendix)
         mod_square = assemble_mod_square(self.encode_mod_square(appendix))
+        self.arr = self.create_pixel_array(encoded, edge, appendix)
         self.arr[-1] = mod_square
+
+    def create_pixel_array(self, encoded, edge: int, appendix: int):
+        arr = np.asarray(encoded, dtype=np.uint8)
+        # TODO make this deterministic with seeding
+        seed = abs(self.gen())
+        rng = np.random.default_rng(seed)
+        arr = np.append(arr, rng.integers(0, 256, appendix, dtype=np.uint8))
+        arr.resize(edge * edge, 3)
+        return arr
 
     def encode_mod_square(self, appendix):
         encoded_appendix = (appendix ^ self.gen()) & 0xffffff
@@ -181,4 +179,4 @@ if __name__ == "__main__":
 
     a = PngImageFile("picture.png")
     print(a.text)
-    print(Rothko(key).decode_from_img("picture.png"))
+    print(Rothko("key").decode_from_img("p2.png"))
