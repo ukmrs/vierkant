@@ -3,6 +3,7 @@ from rc import RC4
 import numpy as np
 from math import ceil, sqrt
 from PIL import Image
+from PIL.PngImagePlugin import PngImageFile, PngInfo
 from collections import deque
 from itertools import cycle
 
@@ -31,11 +32,16 @@ def assemble_mod_square(bitseq: str):
     return mod_square
 
 
+def scale_up(arr, n):
+    return np.kron(arr, np.ones((n, n, 3), dtype=np.uint8))
+
+
 class Rothko():
     """creates colorful squares off given secret msg and key
     unless the user provided a dull msg :f"""
 
     max_shuffles = 250
+    max_scale_up = 500
 
     def __init__(self, key):
         self.rc = RC4(key)
@@ -51,9 +57,14 @@ class Rothko():
         self.xor_gen.close()  # closing inf generator for peace of mind
         return self.arr
 
-    def to_img(self):
-        img = Image.fromarray(self.arr)
-        img.save("picture.png")
+    def encode_to_img(self, secret, scale=False):
+        self.encode(secret)
+        if scale:
+            edge, *_ = self.arr.shape
+            s = edge * max(self.max_scale_up // edge, 1)
+            img = Image.fromarray(self.arr).resize((s, s), Image.NEAREST)
+            return img
+        return Image.fromarray(self.arr)
 
     def decode(self, arr):
         appendix_key = self.gen()
@@ -74,12 +85,9 @@ class Rothko():
         self.arr = create_pixel_array(encoded, edge, appendix)
         mod_square = assemble_mod_square(self.encode_mod_square(appendix))
         self.arr[-1] = mod_square
-        print(mod_square)
-        print("preshuffle\n", self.arr)
 
     def encode_mod_square(self, appendix):
         encoded_appendix = (appendix ^ self.gen()) & 0xffffff
-        print(binstrip(encoded_appendix))
         return binstrip(encoded_appendix)
 
     @staticmethod
@@ -145,7 +153,7 @@ class Rothko():
 
     @staticmethod
     def xorshitf(seed: int):
-        seed &= 0xFFFFFFFF
+        seed &= 0xffffffff
         while True:
             seed ^= np.left_shift(seed, 13)
             seed ^= np.right_shift(seed, 17)
@@ -154,4 +162,13 @@ class Rothko():
 
 
 if __name__ == "__main__":
+    # msg = "".join(chr(i) for i in range(161, 55290))
+    msg = "dsfsfwefwefwefj"
+    key = "simple key"
+    img = Rothko(key).encode_to_img(msg, scale=True)
+    img.save("picture.png")
+
+    scaled_down = img.resize((3, 3), Image.NEAREST)
+    print(np.asarray(scaled_down))
+
     pass
