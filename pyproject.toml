@@ -13,6 +13,7 @@ multipart = "^0.2.4"
 numpy = "^1.20.2"
 Pillow = "^8.2.0"
 uvicorn = "^0.13.4"
+jinja2 = "^2.11.3"
 
 [tool.poetry.dev-dependencies]
 

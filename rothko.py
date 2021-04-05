@@ -8,8 +8,12 @@ from collections import deque
 from itertools import cycle
 
 
-def binstrip(num: int):
+def binstrip(num: int) -> str:
     return bin(num)[2:]  # equivalent to .lstrip("0x")
+
+
+def hexify(num: int) -> str:
+    return hex(num)[2:].zfill(2)
 
 
 def calc_square_edge(encoded_len: int):
@@ -30,7 +34,7 @@ class Rothko():
     unless the user provided a dull msg :f"""
 
     max_shuffles = 250
-    max_scale_up = 500
+    max_scale_up = 400
     temp_name = "picture.png"
 
     def __init__(self, key):
@@ -71,6 +75,22 @@ class Rothko():
 
         # asarray creates readonly hence the np.array
         return self.decode(np.array(img))
+
+    def encode_to_string(self, secret):
+        self.encode(secret)
+        print(self.arr)
+        print("-" * 20)
+        one_dimensional_length = np.product(self.arr.shape)
+        self.arr.resize(one_dimensional_length)
+        return ''.join(hexify(i) for i in self.arr)
+
+    def decode_from_string(self, encoded):
+        arr = np.fromiter(
+            (int(encoded[i:i + 2], 16) for i in range(0, len(encoded), 2)),
+            dtype=np.uint8)
+        dim = int(sqrt(len(arr) // 3))
+        arr.resize(dim, dim, 3)
+        return self.decode(arr)
 
     def decode(self, arr):
         appendix_key = self.gen()
@@ -168,14 +188,4 @@ class Rothko():
 
 
 if __name__ == "__main__":
-    # msg = "".join(chr(i) for i in range(161, 55290))
-    msg = "\n\tI am not happy\n\tand\n\tI am not sad\n"
-    key = "krówka"
-    img = Rothko(key).encode_to_img(msg, scale=True)
-    # img.save("picture.png")
-
-    scaled_down = img.resize((3, 3), Image.NEAREST)
-    a = PngImageFile("picture.png")
-    # print(a.text)
-    with open("p2.png", "rb") as f:
-        print(Rothko("klucz").decode_from_img(f))
+    pass
