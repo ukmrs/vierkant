@@ -1,4 +1,4 @@
-from rc import RC4
+from ciphers.rc import RC4
 from collections import namedtuple
 import pytest
 

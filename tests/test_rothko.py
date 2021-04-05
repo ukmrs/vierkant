@@ -1,6 +1,5 @@
 import pytest
-from rothko import (calc_square_edge, Rothko, assemble_mod_square)
-from itertools import cycle
+from ciphers.rothko import (calc_square_edge, Rothko, assemble_mod_square)
 import numpy as np
 from PIL import Image
 

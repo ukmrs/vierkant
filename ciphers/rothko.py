@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from rc import RC4
+from ciphers.rc import RC4
 import numpy as np
 from math import ceil, sqrt
 from PIL import Image

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from fastapi import FastAPI, File, UploadFile
-from rothko import Rothko
+from ciphers.rothko import Rothko
 from fastapi.responses import FileResponse
 from starlette.responses import RedirectResponse
 from io import BytesIO
