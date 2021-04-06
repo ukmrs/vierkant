@@ -2,15 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Sample Form</title>
+	<link href="{{ url_for('static', path='/style.css') }}" rel="stylesheet">
+    <title>Encode Secret</title>
 </head>
 <body>
 <form method="post">
-    <input type="number" name="num" value="1234"/>
+	<h1>Encode your message</h1>
+	<label, for="key">Key</label><BR>
+	<textarea type="key" name="key" value="" rows=2 cols=40/></textarea>
+	<BR><BR><label for="secret">Secret</label><BR>
+    <textarea type="secret" name="secret" rows=10 cols=60></textarea>
     <input type="submit">
 </form>
 
-<p>Result: {{ result }}</p>
+<p>Encoded:<p>
+<p>{{ result }}</p>
 
 </body>
 </html>
