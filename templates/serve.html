@@ -7,16 +7,17 @@
 </head>
 <body>
 <form method="post">
-	<h1>Encode your message</h1>
+	<h1>Encode or decode your message</h1>
 	<label, for="key">Key</label><BR>
 	<textarea type="key" name="key" value="" rows=2 cols=40/></textarea>
 	<BR><BR><label for="secret">Secret</label><BR>
     <textarea type="secret" name="secret" rows=10 cols=60></textarea>
-    <input type="submit">
+	<BR><BR><input type="submit", name="btn", value="encode">
+	<input type="submit", name="btn", value="decode">
 </form>
 
 <p>Encoded:<p>
-<p>{{ result }}</p>
+<p class=result>{{ result }}</p>
 
 </body>
 </html>

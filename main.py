@@ -34,6 +34,39 @@ async def decode_image(key: str,
     return Rothko(key).decode_from_img(image)
 
 
+# ============  encode/decode from image  =============
+
+
+@app.get('/encodeimg')
+def get_result_img(request: Request):
+    result = ''
+    return templates.TemplateResponse('serve.html',
+                                      context={
+                                          'request': request,
+                                          'result': result
+                                      })
+
+
+@app.post('/encodeimg')
+def post_request_img(request: Request,
+                     key: str = Form(...),
+                     secret: str = Form(...),
+                     btn: str = Form(...)):
+    if btn == "encode":
+        result = Rothko(key).encode_to_string(secret)
+    else:
+        result = Rothko(key).decode_from_string(secret)
+    return templates.TemplateResponse('serve.html',
+                                      context={
+                                          'request': request,
+                                          'result': result,
+                                          'key': key,
+                                      })
+
+
+# ============  encode/decode from string  ============
+
+
 @app.get('/encodestr')
 def get_result(request: Request):
     result = ''
@@ -45,11 +78,17 @@ def get_result(request: Request):
 
 
 @app.post('/encodestr')
-def post_req(request: Request, key: str = Form(...), secret: str = Form(...)):
-    result = Rothko(key).encode_to_string(secret)
+def post_req(request: Request,
+             key: str = Form(...),
+             secret: str = Form(...),
+             btn: str = Form(...)):
+    if btn == "encode":
+        result = Rothko(key).encode_to_string(secret)
+    else:
+        result = Rothko(key).decode_from_string(secret)
     return templates.TemplateResponse('serve.html',
                                       context={
                                           'request': request,
                                           'result': result,
-                                          'num': key,
+                                          'key': key,
                                       })

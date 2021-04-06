@@ -2,6 +2,10 @@ body {
 	background-color: #fafafa
 }
 
-input {
-	display: block;
+/* textarea { */
+/* 	white-space: pre-wrap; */
+/* } */
+
+.result {
+	white-space: pre-wrap;
 }
