@@ -7,7 +7,11 @@ from fastapi.responses import FileResponse
 from starlette.responses import RedirectResponse
 from starlette.background import BackgroundTasks
 from io import BytesIO
+from uuid import uuid4
 import os
+
+MAIN_DIR = os.path.dirname(os.path.abspath(__file__))
+TMP = os.sep.join((MAIN_DIR, "imgs"))
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -40,10 +44,14 @@ async def decode_image(key: str,
     return Rothko(key).decode_from_img(image)
 
 
-@app.get('/encoded')
-def image_response(background_tasks: BackgroundTasks):
-    background_tasks.add_task(remove_file, "picture.png")
-    return FileResponse("picture.png")
+@app.get('/encoded/{image_id}')
+def image_response(background_tasks: BackgroundTasks, image_id: str):
+    """Serves the encoded img and deletes it shortly after"""
+    path = os.sep.join((TMP, image_id)) + ".png"
+    if os.path.isfile(path):
+        background_tasks.add_task(remove_file, path)
+        return FileResponse(path)
+    return "Encoded pictures are avaible only once"
 
 
 # ============  encode/decode from image  =============
@@ -65,8 +73,10 @@ def post_request_img(request: Request,
                      secret: str = Form(...),
                      btn: str = Form(...)):
     if btn == "encode":
-        Rothko(key).encode_to_img(secret, scale=True)
-        return RedirectResponse(url="/encoded",
+        name = uuid4().hex
+        path = os.sep.join((TMP, name)) + ".png"
+        _ = Rothko(key).encode_to_img(secret, scale=True, save_path=path)
+        return RedirectResponse(url=f"/encoded/{name}",
                                 status_code=status.HTTP_303_SEE_OTHER)
         # return FileResponse("picture.png")
     else:

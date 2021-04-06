@@ -51,7 +51,10 @@ class Rothko():
         self.xor_gen.close()  # closing inf generator for peace of mind
         return self.arr
 
-    def encode_to_img(self, secret, scale=False):
+    def encode_to_img(self,
+                      secret,
+                      scale=False,
+                      save_path: str = "/imgs/pic.png"):
         self.encode(secret)
         edge, *_ = self.arr.shape
         if scale and (scale_up := (self.max_scale_up // edge)) > 1:
@@ -59,9 +62,11 @@ class Rothko():
             img = Image.fromarray(self.arr).resize((s, s), Image.NEAREST)
             meta = PngInfo()
             meta.add_text("edge", str(edge))
-            img.save(self.temp_name, pnginfo=meta)
+            img.save(save_path, pnginfo=meta)
             return img
-        return Image.fromarray(self.arr)
+        img = Image.fromarray(self.arr)
+        img.save(save_path)
+        return img
 
     def decode_from_img(self, file):
         img = PngImageFile(fp=file)
