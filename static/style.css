@@ -1,11 +1,11 @@
 body {
-	background-color: #fafafa
+  background-color: #fafafa;
 }
 
-/* textarea { */
-/* 	white-space: pre-wrap; */
-/* } */
+input {
+  display: block;
+}
 
 .result {
-	white-space: pre-wrap;
+  white-space: pre-wrap;
 }

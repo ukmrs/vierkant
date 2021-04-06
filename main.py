@@ -53,15 +53,10 @@ def post_request_img(request: Request,
                      secret: str = Form(...),
                      btn: str = Form(...)):
     if btn == "encode":
-        result = Rothko(key).encode_to_string(secret)
+        Rothko(key).encode_to_img(secret, scale=True)
+        return FileResponse("picture.png")
     else:
-        result = Rothko(key).decode_from_string(secret)
-    return templates.TemplateResponse('serve.html',
-                                      context={
-                                          'request': request,
-                                          'result': result,
-                                          'key': key,
-                                      })
+        return "not implemented"
 
 
 # ============  encode/decode from string  ============
