@@ -20,13 +20,7 @@ templates = Jinja2Templates(directory='templates/')
 
 @app.get("/")
 def index():
-    return RedirectResponse(url='/docs')
-
-
-@app.get('/encode/{key}/{msg}')
-def encode(key, msg):
-    Rothko(key).encode_to_img(msg, scale=True)
-    return FileResponse("picture.png")
+    return RedirectResponse(url='/img')
 
 
 def read_bytes(file):
@@ -37,8 +31,8 @@ def remove_file(path):
     os.unlink(path)
 
 
-@app.get('/decodeimg')
-def ddddd(request: Request):
+@app.get('/img')
+def get_image(request: Request):
     result = ''
     return templates.TemplateResponse('img.html',
                                       context={
@@ -47,33 +41,36 @@ def ddddd(request: Request):
                                       })
 
 
-@app.post("/decodeimg")
-async def tempo(request: Request,
-                key: str = Form(...),
-                secret: str = Form(None),
-                file: UploadFile = File(None),
-                btn: str = Form(...)):
+@app.post("/img")
+async def post_image(request: Request,
+                     key: str = Form(...),
+                     secret: str = Form(None),
+                     file: UploadFile = File(None),
+                     btn: str = Form(...)):
     if btn == "encode":
-        name = uuid4().hex
-        path = os.sep.join((TMP, name)) + ".png"
-        _ = Rothko(key).encode_to_img(secret, scale=True, save_path=path)
-        return RedirectResponse(url=f"/encoded/{name}",
-                                status_code=status.HTTP_303_SEE_OTHER)
+        if secret:
+            name = uuid4().hex
+            path = os.sep.join((TMP, name)) + ".png"
+            _ = Rothko(key).encode_to_img(secret, scale=True, save_path=path)
+            return RedirectResponse(url=f"/encoded/{name}",
+                                    status_code=status.HTTP_303_SEE_OTHER)
+        else:
+            result = "Secret field was not filled but is required for encoding"
 
-    else:
+    try:
         img = read_bytes(await file.read())
         result = Rothko(key).decode_from_img(img)
-        return templates.TemplateResponse('img.html',
-                                          context={
-                                              'request': request,
-                                              'result': result,
-                                          })
+    except SyntaxError:  # file was not supplied or is not valid png
+        result = "Image was not supplied but is required by decode method"
+
+    return templates.TemplateResponse('img.html',
+                                      context={
+                                          'request': request,
+                                          'result': result,
+                                      })
 
     # # image = read_bytes(await file.read())
     # return Rothko(key).decode_from_img(image)
-
-
-# ============  encode/decode from image  =============
 
 
 @app.get('/encoded/{image_id}')
@@ -86,36 +83,10 @@ def image_response(background_tasks: BackgroundTasks, image_id: str):
     return "Encoded pictures are avaible only once"
 
 
-@app.get('/encodeimg')
-def get_result_img(request: Request):
-    result = ''
-    return templates.TemplateResponse('serve.html',
-                                      context={
-                                          'request': request,
-                                          'result': result
-                                      })
-
-
-@app.post('/encodeimg')
-def post_request_img(request: Request,
-                     key: str = Form(...),
-                     secret: str = Form(...),
-                     btn: str = Form(...)):
-    if btn == "encode":
-        name = uuid4().hex
-        path = os.sep.join((TMP, name)) + ".png"
-        _ = Rothko(key).encode_to_img(secret, scale=True, save_path=path)
-        return RedirectResponse(url=f"/encoded/{name}",
-                                status_code=status.HTTP_303_SEE_OTHER)
-        # return FileResponse("picture.png")
-    else:
-        return "not implemented"
-
-
 # ============  encode/decode from string  ============
 
 
-@app.get('/encodestr')
+@app.get('/string')
 def get_result(request: Request):
     result = ''
     return templates.TemplateResponse('serve.html',
@@ -125,7 +96,7 @@ def get_result(request: Request):
                                       })
 
 
-@app.post('/encodestr')
+@app.post('/string')
 def post_req(request: Request,
              key: str = Form(...),
              secret: str = Form(...),
@@ -140,3 +111,9 @@ def post_req(request: Request,
                                           'result': result,
                                           'key': key,
                                       })
+
+
+@app.get('/encode/{key}/{msg}')
+def encode(key, msg):
+    Rothko(key).encode_to_img(msg, scale=True)
+    return FileResponse("picture.png")
