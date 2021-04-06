@@ -37,11 +37,32 @@ def remove_file(path):
     os.unlink(path)
 
 
-@app.post("/decode")
-async def decode_image(key: str,
-                       file: UploadFile = File(..., media_type="image/png")):
-    image = read_bytes(await file.read())
-    return Rothko(key).decode_from_img(image)
+@app.get('/upload_img')
+def ddddd(request: Request):
+    result = ''
+    return templates.TemplateResponse('serve_img.html',
+                                      context={
+                                          'request': request,
+                                          'result': result
+                                      })
+
+
+@app.post("/upload_img")
+async def decode_image(request: Request, image: UploadFile = File(...)):
+    img = read_bytes(await image.read())
+    return Rothko("key").decode_from_img(img)
+    # pass
+    # return templates.TemplateResponse('serve.html',
+    #                                   context={
+    #                                       'request': request,
+    #                                       'result': result,
+    #                                   })
+
+    # # image = read_bytes(await file.read())
+    # return Rothko(key).decode_from_img(image)
+
+
+# ============  encode/decode from image  =============
 
 
 @app.get('/encoded/{image_id}')
@@ -52,9 +73,6 @@ def image_response(background_tasks: BackgroundTasks, image_id: str):
         background_tasks.add_task(remove_file, path)
         return FileResponse(path)
     return "Encoded pictures are avaible only once"
-
-
-# ============  encode/decode from image  =============
 
 
 @app.get('/encodeimg')
