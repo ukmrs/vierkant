@@ -37,26 +37,37 @@ def remove_file(path):
     os.unlink(path)
 
 
-@app.get('/upload_img')
+@app.get('/decodeimg')
 def ddddd(request: Request):
     result = ''
-    return templates.TemplateResponse('serve_img.html',
+    return templates.TemplateResponse('img.html',
                                       context={
                                           'request': request,
                                           'result': result
                                       })
 
 
-@app.post("/upload_img")
-async def decode_image(request: Request, image: UploadFile = File(...)):
-    img = read_bytes(await image.read())
-    return Rothko("key").decode_from_img(img)
-    # pass
-    # return templates.TemplateResponse('serve.html',
-    #                                   context={
-    #                                       'request': request,
-    #                                       'result': result,
-    #                                   })
+@app.post("/decodeimg")
+async def tempo(request: Request,
+                key: str = Form(...),
+                secret: str = Form(None),
+                file: UploadFile = File(None),
+                btn: str = Form(...)):
+    if btn == "encode":
+        name = uuid4().hex
+        path = os.sep.join((TMP, name)) + ".png"
+        _ = Rothko(key).encode_to_img(secret, scale=True, save_path=path)
+        return RedirectResponse(url=f"/encoded/{name}",
+                                status_code=status.HTTP_303_SEE_OTHER)
+
+    else:
+        img = read_bytes(await file.read())
+        result = Rothko(key).decode_from_img(img)
+        return templates.TemplateResponse('img.html',
+                                          context={
+                                              'request': request,
+                                              'result': result,
+                                          })
 
     # # image = read_bytes(await file.read())
     # return Rothko(key).decode_from_img(image)

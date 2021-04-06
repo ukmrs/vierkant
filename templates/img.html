@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <link href="{{ url_for('static', path='/style.css') }}" rel="stylesheet">
+    <title>Encode Secret</title>
+</head>
+
+<body>
+    <form method="post" , enctype="multipart/form-data">
+        <h1>Encode or decode your message</h1>
+        <label, for="key">Key</label><BR>
+            <textarea type="key" name="key" value="" rows=2 cols=40 /></textarea>
+            <BR><BR>
+            <label for="secret">Secret</label><BR>
+            <textarea type="secret" name="secret" rows=10 cols=60></textarea>
+            <BR><BR>
+            <label for="file">File</label><BR>
+            <input type="file" name="file" id="file" value="file">
+            <BR><BR>
+            <input type="submit" , name="btn" , value="encode">
+            <input type="submit" , name="btn" , value="decode">
+    </form>
+
+    <p>Decoded:
+    <p>
+    <p class=result>{{ result }}</p>
+
+</body>
+
+</html>
