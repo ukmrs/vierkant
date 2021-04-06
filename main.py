@@ -5,7 +5,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 from starlette.responses import RedirectResponse
+from starlette.background import BackgroundTasks
 from io import BytesIO
+import os
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -27,6 +29,10 @@ def read_bytes(file):
     return BytesIO(file)
 
 
+def remove_file(path):
+    os.unlink(path)
+
+
 @app.post("/decode")
 async def decode_image(key: str,
                        file: UploadFile = File(..., media_type="image/png")):
@@ -35,7 +41,8 @@ async def decode_image(key: str,
 
 
 @app.get('/encoded')
-def image_response():
+def image_response(background_tasks: BackgroundTasks):
+    background_tasks.add_task(remove_file, "picture.png")
     return FileResponse("picture.png")
 
 
