@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from ciphers.rothko import Rothko
-from fastapi import FastAPI, File, UploadFile, Request, Form
+from fastapi import FastAPI, File, UploadFile, Request, Form, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
@@ -34,6 +34,11 @@ async def decode_image(key: str,
     return Rothko(key).decode_from_img(image)
 
 
+@app.get('/encoded')
+def image_response():
+    return FileResponse("picture.png")
+
+
 # ============  encode/decode from image  =============
 
 
@@ -54,7 +59,9 @@ def post_request_img(request: Request,
                      btn: str = Form(...)):
     if btn == "encode":
         Rothko(key).encode_to_img(secret, scale=True)
-        return FileResponse("picture.png")
+        return RedirectResponse(url="/encoded",
+                                status_code=status.HTTP_303_SEE_OTHER)
+        # return FileResponse("picture.png")
     else:
         return "not implemented"
 
