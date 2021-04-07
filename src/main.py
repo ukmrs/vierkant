@@ -69,9 +69,6 @@ async def post_image(request: Request,
                                           'result': result,
                                       })
 
-    # # image = read_bytes(await file.read())
-    # return Rothko(key).decode_from_img(image)
-
 
 @app.get('/encoded/{image_id}')
 def image_response(background_tasks: BackgroundTasks, image_id: str):
@@ -111,6 +108,9 @@ def post_req(request: Request,
                                           'result': result,
                                           'key': key,
                                       })
+
+
+# ============  url based functions  ============
 
 
 @app.get('/encode/{key}/{msg}')
