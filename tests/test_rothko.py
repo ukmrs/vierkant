@@ -28,7 +28,7 @@ def shuffle_deshuffle_helper(key, secret):
     shuffler.shuffle_squares()
     deshuffler.arr = shuffler.arr.copy()
     deshuffler.deshuffe_squares()
-    assert (before_shuffle == deshuffler.arr).copy
+    assert (before_shuffle == deshuffler.arr).all()
 
 
 def test_shuffle_deshuflle():
