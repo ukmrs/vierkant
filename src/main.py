@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 from src.ciphers.rothko import Rothko
-from fastapi import FastAPI, File, UploadFile, Request, Form, status
+from fastapi import (FastAPI, File, UploadFile, Request, Form, status, Depends,
+                     HTTPException)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 from starlette.responses import RedirectResponse
 from starlette.background import BackgroundTasks
+import secrets
+from fastapi.security import HTTPBasic, HTTPBasicCredentials
+
 from io import BytesIO
 from uuid import uuid4
 import os
@@ -16,6 +20,7 @@ TMP = os.sep.join((MAIN_DIR, "tmpimgs"))
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory='templates/')
+security = HTTPBasic()
 
 
 @app.get("/")
@@ -29,6 +34,9 @@ def read_bytes(file):
 
 def remove_file(path):
     os.unlink(path)
+
+
+# ============  encode/decode from img  ============
 
 
 @app.get('/img')
@@ -113,7 +121,32 @@ def post_req(request: Request,
 # ============  url based functions  ============
 
 
+# TODO this is incorrect
 @app.get('/encode/{key}/{msg}')
 def encode(key, msg):
     Rothko(key).encode_to_img(msg, scale=True)
     return FileResponse("picture.png")
+
+
+# ============  Basic Auth Lock  ============
+
+
+def get_username(credentials: HTTPBasicCredentials = Depends(security)):
+    correct_password = secrets.compare_digest(credentials.password, "pass")
+    if not correct_password:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="password incorrect",
+            headers={"WWW-Authenticate": "Basic"},
+        )
+    return credentials.username
+
+
+@app.get("/secret")
+def give_out_secret(request: Request, username: str = Depends(get_username)):
+    result = f"I am sorry {username}, this page is pointless"
+    return templates.TemplateResponse("secret.html",
+                                      context={
+                                          "request": request,
+                                          "secret": result
+                                      })

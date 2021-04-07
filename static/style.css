@@ -4,6 +4,7 @@ body {
 
 input {
   display: block;
+  cursor: pointer;
 }
 
 .result {
