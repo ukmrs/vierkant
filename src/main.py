@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from ciphers.rothko import Rothko
+from src.ciphers.rothko import Rothko
 from fastapi import FastAPI, File, UploadFile, Request, Form, status
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
@@ -11,7 +11,7 @@ from uuid import uuid4
 import os
 
 MAIN_DIR = os.path.dirname(os.path.abspath(__file__))
-TMP = os.sep.join((MAIN_DIR, "imgs"))
+TMP = os.sep.join((MAIN_DIR, "tmpimgs"))
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
