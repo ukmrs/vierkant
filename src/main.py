@@ -11,7 +11,6 @@ import secrets
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from io import BytesIO
-from uuid import uuid4
 import os
 
 MAIN_DIR = os.path.dirname(os.path.abspath(__file__))
