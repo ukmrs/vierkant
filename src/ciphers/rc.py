@@ -1,32 +1,46 @@
-#!/usr/bin/env/ python3
-"""This module contains the RC4 class which handles the encryption"""
-
 from typing import List, Generator
+import numpy as np
 # always to square
 
 
 class RC4():
-    """Encryption class based on RC4 algorithm that also generates bitmaps?"""
+    """RC4 stream cipher
+    basic usage:
+    ```
+    key, msg = "key", "message"
+    encoded = RC4(key).encode(msg)
+    decoded = RC4(key).decode(encoded)
+    ```
+    key scheduling and pseudo random generation algorithm are implemented
+    as described here:
+    Klein, A. Attacks on the RC4 stream cipher.
+    Des. Codes Cryptogr. 48, 269–286 (2008)."""
     def __init__(self, key):
         self.sb = None  # statebox
-        self.reset(key)  # looks akward but allows resetting the instance
+        # performs key scheduling, can be called again to reset the instance
+        self.ksa(key)
 
-    def encode(self, msg: str):
-        "API encode"
+    def encode(self, msg: str) -> List[int]:
+        """encodes given msg and returns list of ints within uint8 range
+        representing bytes"""
         return self._encode(bytearray(msg, encoding="utf8"))
 
-    def _encode(self, ord_msg_gen) -> List[int]:
+    def _encode(self, msg_bytes) -> List[int]:
         """private encode"""
-        pr_gen = self.prgen(len(ord_msg_gen))
-        return [p ^ o for p, o in zip(pr_gen, ord_msg_gen)]
+        pr_gen = self.prgen(len(msg_bytes))
+        return [p ^ o for p, o in zip(pr_gen, msg_bytes)]
 
     def decode(self, msg: List[int]) -> str:
-        return bytearray(self._encode(msg)).decode("utf8")
+        """expects list of ints representing bytes and decodes
+        the message"""
+        try:
+            return bytearray(self._encode(msg)).decode("utf8")
+        except UnicodeDecodeError:
+            # secret decoded with a wrong key can produce invalid utf8 bytes
+            return ""
 
-    def reset(self, key):
-        """resets or initialiazes the class instance with a new key
-        perform key scheduling algorithm"""
-        # TODO if I care for utf8 above a byte then change this func
+    def ksa(self, key) -> None:
+        """key scheduling algorithm, generates initial permutation"""
         key_len = len(key)  # len never changes
         j = 0
         self.sb = list(range(256))
