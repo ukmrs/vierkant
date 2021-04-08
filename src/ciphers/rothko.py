@@ -8,7 +8,9 @@ from collections import deque
 from itertools import cycle
 from typing import Optional
 from uuid import uuid4
+from io import BufferedReader
 import os
+from typing import Generator, Callable
 
 
 def binstrip(num: int) -> str:
@@ -33,6 +35,26 @@ def assemble_mod_square(bitseq: str):
 
 
 class PixelImage():
+    """Holds encoded square, its id and metada
+
+    Attributes
+    ------------
+    img: PIL.Image
+        Contains the encoded square
+    pnginfo: PIL.PngImagePlugin.PngInfo:
+        PNG Metadata to be written when save method is called
+    id: str
+        Unique id of the image
+
+    Read Only properties
+    ------------
+    pngname:
+        name of the produced png file
+
+    Methods
+    ------------
+    save(dir: str)
+        Saves the image with metada as pngname in the provided directory"""
     def __init__(self, img, pnginfo: Optional[PngInfo]):
         self.img = img
         self.pnginfo = pnginfo
@@ -43,6 +65,7 @@ class PixelImage():
         return self.id + ".png"
 
     def save(self, save_dir: str) -> str:
+        """Saves the image with the provided directory"""
         full_path = os.sep.join((save_dir, self.pngname))
         self.img.save(full_path, pnginfo=self.pnginfo)
         return full_path
@@ -54,23 +77,35 @@ class Rothko():
 
     max_shuffles = 250
     max_scale_up = 400
-    temp_name = "picture.png"
 
     def __init__(self, key):
         self.rc = RC4(key)
         self.xor_gen = self.xorshitf(sum(ord(c) for c in key) * len(key))
         self.gen()
-        self.arr = None
+        self.arr: Optional[np.ndarray] = None
 
-    def encode(self, secret):
+    def encode(self, secret: str) -> np.ndarray:
         self.init_array(secret)
         self.shuffle_squares()
         dimension = int(sqrt(self.arr.shape[0]))
         self.arr.resize(dimension, dimension, 3)
         self.xor_gen.close()  # closing inf generator for peace of mind
-        return self.arr
+        return self.arr  # type: ignore
 
-    def encode_to_img(self, secret, scale=True):
+    def encode_to_img(self, secret: str, scale: bool = True) -> PixelImage:
+        """Encodes secret to a colorful png square
+
+        Parameters
+        ___________
+        secret: str
+            Secret to be encoded consisting of any utf8 chars including
+            whitespace ones
+        scale: bool = True
+            Whether or not to enlarge output image. Only enourmous secrets
+            will produce image bigger than a couple pixels by a couple pixels
+            which is miserable to look at.
+            Basically a choice of aesthetics over pragmatism"""
+
         self.encode(secret)
         edge, *_ = self.arr.shape
         metadata = PngInfo()
@@ -83,20 +118,27 @@ class Rothko():
         img = Image.fromarray(self.arr)
         return PixelImage(img, pnginfo=metadata)
 
-    def decode_from_img(self, file):
+    def decode_from_img(self, file: BufferedReader) -> str:
+        """Decodes secrets from png squares
+
+        Parameters
+        ___________
+        file: BytesIO
+            file object produced by opening in 'rb' mode or other means"""
+
         img = PngImageFile(fp=file)
         try:
             edge = img.text["edge"]
-        except KeyError:
+        except KeyError:  # img was not upscaled
             pass
-        else:
+        else:  # img was upscaled so we scale it down as prescribed by metadata
             edge = int(edge)
             img = img.resize((edge, edge), resample=Image.NEAREST)
 
         # asarray creates readonly hence the np.array
         return self.decode(np.array(img))
 
-    def encode_to_string(self, secret):
+    def encode_to_string(self, secret: str) -> str:
         self.encode(secret)
         print(self.arr)
         print("-" * 20)
@@ -104,7 +146,7 @@ class Rothko():
         self.arr.resize(one_dimensional_length)
         return ''.join(hexify(i) for i in self.arr)
 
-    def decode_from_string(self, encoded):
+    def decode_from_string(self, encoded: str) -> str:
         arr = np.fromiter(
             (int(encoded[i:i + 2], 16) for i in range(0, len(encoded), 2)),
             dtype=np.uint8)
@@ -126,6 +168,9 @@ class Rothko():
         return self.rc.decode(self.arr[:-appendix])
 
     def init_array(self, secret):
+        """initializes array of RGB image complient dimensions
+        encodes information about added non significant squares
+        in the last pixel"""
         encoded = np.asarray(self.rc.encode(secret), dtype=np.uint8)
         edge = calc_square_edge(len(encoded))
         appendix = edge**2 * 3 - len(encoded)
@@ -134,8 +179,9 @@ class Rothko():
         self.arr[-1] = mod_square
 
     def create_pixel_array(self, encoded, edge: int, appendix: int):
+        """shapes the array into approppriate nxnx3 dimensions
+        fills extra pixels neeeded for a perfrect square with random noise"""
         arr = np.asarray(encoded, dtype=np.uint8)
-        # TODO make this deterministic with seeding
         seed = abs(self.gen())
         rng = np.random.default_rng(seed)
         arr = np.append(arr, rng.integers(0, 256, appendix, dtype=np.uint8))
@@ -152,40 +198,53 @@ class Rothko():
         encoded = int(encoded, 2)
         return (encoded ^ appendix_key) & 0xffffff
 
-    def calc_shuffling_amount(self, dim) -> int:
-        amount = dim // 3 + 15
+    def calc_shuffling_amount(self) -> int:
+        amount = self.arr.shape[0] // 3 + 15
         return min(amount, self.max_shuffles)
 
-    def __shuffle_core(self, dim, rng, shift, *args):
+    def __shuffle_core(self, prng: Callable[[], int], shift: int, *range_args):
         """
-        dim = amount of rows
-        rng = function generating random numbers
-        args = passed to range()
-        shift = int 0 to 2
+        performs the shuffling of bytes
+        expects self.arr in (edge * edge, 3) view
+
+        Parameters
+        ____________
+
+        prng: function() -> int
+            function yielding psuedo random numbers
+        shift: int
+            determines row to column shuffle ordering
+            Deshuffle ordering must be opposite to shuffling
+                1 1 0 1 shuffle
+                1 0 1 1 deshuffle
+        range_args:
+            Passed to range decides which squares are shuffled first
         """
         tmp = [True, True, True]
         tmp[shift] = False
-        for i, row_time in zip(range(*args), cycle(tmp)):
-            if row_time:  # swaps rows
+        dim = self.arr.shape[0]
+        for i, row_time in zip(range(*range_args), cycle(tmp)):
+            if row_time:  # swap rows
                 ix = i % dim
-                rand = rng() % dim
+                rand = prng() % dim
                 self.swap_arr_row(ix, rand)
-            else:  # swaps columns
+            else:  # swap columns
                 ix = i % 3
-                rand = rng() % 3
+                rand = prng() % 3
                 self.swap_arr_column(ix, rand)
 
     def shuffle_squares(self):
-        dim, *_ = self.arr.shape
-        self.__shuffle_core(dim, self.gen, 2,
-                            self.calc_shuffling_amount(dim) - 1, -1, -1)
+        """Shuffles begining from non-significant squares"""
+        self.__shuffle_core(self.gen, 2,
+                            self.calc_shuffling_amount() - 1, -1, -1)
 
     def deshuffe_squares(self):
-        dim, *_ = self.arr.shape
-        iterations = self.calc_shuffling_amount(dim)
+        """Performs the inverse of shuffle squares
+        prepares pseudo gen"""
+        iterations = self.calc_shuffling_amount()
         shift = iterations % 3
         swap_stack = deque(self.gen() for _ in range(iterations))
-        self.__shuffle_core(dim, swap_stack.pop, shift, iterations)
+        self.__shuffle_core(swap_stack.pop, shift, iterations)
 
     def swap_arr_row(self, i, j):
         self.arr[[i, j]] = self.arr[[j, i]]
@@ -198,7 +257,8 @@ class Rothko():
         return next(self.xor_gen)
 
     @staticmethod
-    def xorshitf(seed: int):
+    def xorshitf(seed: int) -> Generator[int, None, None]:
+        """simple xorshift for psuedo random generation"""
         seed &= 0xffffffff
         while True:
             seed ^= np.left_shift(seed, 13)

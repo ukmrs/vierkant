@@ -20,7 +20,7 @@ def shuffle_deshuffle_helper(key, secret):
     shuffler.init_array(secret)
     before_shuffle = shuffler.arr.copy()
     # get generators in sync as deshuffler
-    # skips some steps
+    # deshuffler skips some steps
     for _ in range(shuffler.gens - deshuffler.gens):
         deshuffler.gen()
     assert deshuffler.gens == shuffler.gens
@@ -77,7 +77,8 @@ def test_encode_decode_mod_square():
 
 # --- test encode decode ---
 
-#foreign whitespace, weird, simple and 256 bytes
+# foreign whitespace, weird, simple and 256 bytes
+
 KEYS = ("\t\n \t\n"
         "some\tthing\n eles Qqę2πśð„’ę©something", "simple key",
         "".join(chr(i) for i in range(200, 456)))
