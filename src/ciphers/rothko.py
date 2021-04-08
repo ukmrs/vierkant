@@ -80,7 +80,10 @@ class Rothko():
 
     def __init__(self, key):
         self.rc = RC4(key)
-        self.xor_gen = self.xorshitf(sum(ord(c) for c in key) * len(key))
+        # pass the torch to xorshift just for fun
+        # this will shift the RC4 keystream but it doesnt matter
+        seed = int("".join(hexify(i) for i in self.rc.prgen(4)), 16)
+        self.xor_gen = self.xorshitf(seed)
         self.gen()
         self.arr: Optional[np.ndarray] = None
 
