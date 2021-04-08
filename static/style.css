@@ -3,8 +3,14 @@ body {
 }
 
 input {
-  display: block;
   cursor: pointer;
+}
+
+input[type=submit] {
+  /* display: block; */
+  font-size: 1.1em;
+  padding: 10px 30px;
+  margin: 0px 30px 0px 0px;
 }
 
 .result {

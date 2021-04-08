@@ -11,15 +11,20 @@ def test_main():
     assert 200 == response.status_code
 
 
+def poke_post_image(btn, key="key", secret=None, file=None):
+    return client.post("/img",
+                       data={
+                           "key": key,
+                           "secret": secret,
+                           "file": file,
+                           "btn": btn,
+                       })
+
+
 def test_good_post_image():
     key = "żyrafowate"
     secret = "rodzina dużych ssaków z podrzędu przeżuwaczy"
-    response = client.post("/img",
-                           data={
-                               "key": key,
-                               "secret": secret,
-                               "btn": "encode"
-                           })
+    response = poke_post_image("encode", key, secret)
 
     # succesfully redirected
     assert response.status_code == 303
@@ -45,3 +50,11 @@ def test_good_post_image():
     valid_png_hopefully = read_bytes(response_get.content)
     decoded = Rothko(key).decode_from_img(valid_png_hopefully)  # type: ignore
     assert decoded == secret
+
+
+def test_post_image_missing_key():
+    res_enc = poke_post_image("encode", None, "secret")
+    res_dec = poke_post_image("decode", None, "secret")
+    # 422 Unprocessable Entity - missing required field
+    assert res_dec.status_code == 422
+    assert res_enc.status_code == 422

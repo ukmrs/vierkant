@@ -68,7 +68,8 @@ async def post_image(request: Request,
         try:
             img = read_bytes(await file.read())
             result = Rothko(key).decode_from_img(img)
-        except SyntaxError:  # file was not supplied or is not valid png
+        except (SyntaxError, AttributeError):
+            # file was not supplied or is not valid png
             result = "Image was not supplied but is required by decode method"
 
     return templates.TemplateResponse('img.html',
