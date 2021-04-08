@@ -1,5 +1,6 @@
 import pytest
 from src.ciphers.rothko import (calc_square_edge, Rothko, assemble_mod_square)
+import os
 import numpy as np
 from PIL import Image
 
@@ -28,6 +29,7 @@ def shuffle_deshuffle_helper(key, secret):
     shuffler.shuffle_squares()
     deshuffler.arr = shuffler.arr.copy()
     deshuffler.deshuffe_squares()
+    assert not (before_shuffle == shuffler.arr).all()
     assert (before_shuffle == deshuffler.arr).all()
 
 
@@ -75,10 +77,14 @@ def test_encode_decode_mod_square():
 
 # --- test encode decode ---
 
-# whitespace, weird, simple and 256 bytes
+#foreign whitespace, weird, simple and 256 bytes
 KEYS = ("\t\n \t\n"
         "some\tthing\n eles Qqę2πśð„’ę©something", "simple key",
         "".join(chr(i) for i in range(200, 456)))
+
+FOREIGN = (
+    'tes#^TEŋ ęß©t\n\tπś535ææœ ’æŋ’ðð’©ęþ', '角先端までの高さオス4.7 - 5.3',
+    'سابقًا ضمن النُويعة الغرب أفريقيَّة (G. c. peralta)، لكن تمَّ تصحيح ذلك')
 
 
 def ed_helper(original):  # ed feels unfortunate because of certain dysfunction
@@ -87,18 +93,19 @@ def ed_helper(original):  # ed feels unfortunate because of certain dysfunction
         assert original == Rothko(key).decode(encoded)
 
 
-def test_ed_d():
-    original = 'abcf'
-    ed_helper(original)
+def test_ed_short():
+    ed_helper('abcf')
+    ed_helper('Ę')
 
 
-def test_ed_weird():
-    original = 'tes#^TEŋ ęß©t\n\tπś535ææœ ’æŋ’ðð’©ęþ'
-    ed_helper(original)
+def test_ed_foreign():
+    for text in FOREIGN:
+        ed_helper(text)
 
 
 def test_ed_simple():
     ed_helper("simple secret message")
+    ed_helper("nothing interesting")
 
 
 @pytest.mark.slow
@@ -109,3 +116,23 @@ def test_ed_highunicode():
 
 
 # --- test encode/decode images ---
+
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def ed_image_helper(key, og):
+    encoded = Rothko(key).encode_to_img(og)
+    save_path = encoded.save(TEST_DIR)
+    try:
+        with open(save_path, "rb") as img:
+            decoded = Rothko(key).decode_from_img(img)
+    finally:  # always cleanup unless something went horribly wrong
+        if os.path.isfile(save_path) and save_path.split(".")[-1] == "png":
+            os.unlink(save_path)
+            pass
+    assert og == decoded
+
+
+def test_ed_images():
+    for text, key in zip(FOREIGN, KEYS):
+        ed_image_helper(key, text)

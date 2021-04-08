@@ -42,9 +42,10 @@ class PixelImage():
     def pngname(self):
         return self.id + ".png"
 
-    def save(self, save_dir: str) -> None:
+    def save(self, save_dir: str) -> str:
         full_path = os.sep.join((save_dir, self.pngname))
         self.img.save(full_path, pnginfo=self.pnginfo)
+        return full_path
 
 
 class Rothko():
