@@ -31,6 +31,9 @@ git clone https://github.com/ukmrs/carrothko && cd carrothko
 # Install the required dependencies
 poetry install
 
+# run tests
+poetry run pytest
+
 # Start the server
 poetry run uvicorn src.html:app --reload
 ```
