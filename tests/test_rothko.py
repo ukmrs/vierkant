@@ -101,17 +101,11 @@ def test_ed_simple():
     ed_helper("simple secret message")
 
 
-def test_to_img_and_back():
-    msg = "something interesting"
-    r = Rothko("somekey")
-    r.encode(msg)
-    img = Image.fromarray(r.arr)
-    r = Rothko("somekey").decode(np.asarray(img).copy())
-    assert msg == r
-
-
 @pytest.mark.slow
 def test_ed_highunicode():
     """unicode characters except control/ASCII/Latin up to
     high surrogate weirdness"""
     ed_helper("".join(chr(i) for i in range(161, 55290)))
+
+
+# --- test encode/decode images ---

@@ -6,6 +6,9 @@ from PIL import Image
 from PIL.PngImagePlugin import PngImageFile, PngInfo
 from collections import deque
 from itertools import cycle
+from typing import Optional
+from uuid import uuid4
+import os
 
 
 def binstrip(num: int) -> str:
@@ -27,6 +30,21 @@ def assemble_mod_square(bitseq: str):
     for i in range(0, len(bitseq), 8):
         mod_square[i // 8] = int(bitseq[i:i + 8], 2)
     return mod_square
+
+
+class PixelImage():
+    def __init__(self, img, pnginfo: Optional[PngInfo]):
+        self.img = img
+        self.pnginfo = pnginfo
+        self.id = uuid4().hex
+
+    @property
+    def pngname(self):
+        return self.id + ".png"
+
+    def save(self, save_dir: str) -> None:
+        full_path = os.sep.join((save_dir, self.pngname))
+        self.img.save(full_path, pnginfo=self.pnginfo)
 
 
 class Rothko():
@@ -51,22 +69,18 @@ class Rothko():
         self.xor_gen.close()  # closing inf generator for peace of mind
         return self.arr
 
-    def encode_to_img(self,
-                      secret,
-                      scale=False,
-                      save_path: str = "/imgs/pic.png"):
+    def encode_to_img(self, secret, scale=True):
         self.encode(secret)
         edge, *_ = self.arr.shape
+        metadata = PngInfo()
         if scale and (scale_up := (self.max_scale_up // edge)) > 1:
             s = edge * scale_up
             img = Image.fromarray(self.arr).resize((s, s), Image.NEAREST)
-            meta = PngInfo()
-            meta.add_text("edge", str(edge))
-            img.save(save_path, pnginfo=meta)
-            return img
+            metadata.add_text("edge", str(edge))
+            return PixelImage(img, pnginfo=metadata)
+
         img = Image.fromarray(self.arr)
-        img.save(save_path)
-        return img
+        return PixelImage(img, pnginfo=metadata)
 
     def decode_from_img(self, file):
         img = PngImageFile(fp=file)

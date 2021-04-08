@@ -57,19 +57,20 @@ async def post_image(request: Request,
                      btn: str = Form(...)):
     if btn == "encode":
         if secret:
-            name = uuid4().hex
-            path = os.sep.join((TMP, name)) + ".png"
-            _ = Rothko(key).encode_to_img(secret, scale=True, save_path=path)
-            return RedirectResponse(url=f"/encoded/{name}",
+            pxl = Rothko(key).encode_to_img(secret, scale=True)
+            pxl.save(TMP)
+            # redirect user to page when they can download image
+            return RedirectResponse(url=f"/encoded/{pxl.id}",
                                     status_code=status.HTTP_303_SEE_OTHER)
         else:
             result = "Secret field was not filled but is required for encoding"
 
-    try:
-        img = read_bytes(await file.read())
-        result = Rothko(key).decode_from_img(img)
-    except SyntaxError:  # file was not supplied or is not valid png
-        result = "Image was not supplied but is required by decode method"
+    else:
+        try:
+            img = read_bytes(await file.read())
+            result = Rothko(key).decode_from_img(img)
+        except SyntaxError:  # file was not supplied or is not valid png
+            result = "Image was not supplied but is required by decode method"
 
     return templates.TemplateResponse('img.html',
                                       context={
