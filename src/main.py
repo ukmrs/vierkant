@@ -124,9 +124,11 @@ def post_req(request: Request,
 
 # TODO this is incorrect
 @app.get('/encode/{key}/{msg}')
-def encode(key, msg):
-    Rothko(key).encode_to_img(msg, scale=True)
-    return FileResponse("picture.png")
+def encode(background_tasks: BackgroundTasks, key, msg):
+    pxl = Rothko(key).encode_to_img(msg, scale=True)
+    save_path = pxl.save(TMP)
+    background_tasks.add_task(remove_file, save_path)
+    return FileResponse(save_path)
 
 
 # ============  Basic Auth Lock  ============
