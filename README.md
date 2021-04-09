@@ -39,8 +39,18 @@ poetry run uvicorn src.html:app --reload
 ```
 
 ## In Terminal
-
+### encode through /encode/<key>/<secret>
 ```
-curl localhost:8000/encode/key/secret --output file.png
+curl http://localhost:8000/encodeimg/key/secret --output example.png
+```
+  
+### decode image through /decode
+```
+# basic usage
+curl -F "file=@example.png -F "key=klucz" http://localhost:8000/decode -s
 
+# to file
+curl -F "file=@example.png" -F "key=klucz" http://localhost:8000/decode -s > example.txt
+# change to actual newlines
+sed -i 's/\\r\\n/\n/g' example.txt
 ```
