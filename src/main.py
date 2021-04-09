@@ -26,7 +26,7 @@ def index():
     return RedirectResponse(url='/img')
 
 
-def read_bytes(file):
+def read_bytes(file) -> BytesIO:
     return BytesIO(file)
 
 

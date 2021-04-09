@@ -8,7 +8,7 @@ from collections import deque
 from itertools import cycle
 from typing import Optional
 from uuid import uuid4
-from io import BufferedReader
+from io import BytesIO
 import os
 from typing import Generator, Callable
 
@@ -73,7 +73,24 @@ class PixelImage():
 
 class Rothko():
     """creates colorful squares off given secret msg and key
-    unless the user provided a dull msg :f"""
+    unless the user provided a dull msg :f
+
+    Basic usage
+    ------------
+    key, secret = "simple", "some secret msg"
+    encoded = Rothko(key).encode(simple)
+    decoded = Rothko(key).decode(encoded)
+    assert secret == decoded
+
+    Recommended usage
+    ------------------
+    Rothko provides following more convienient methods:
+    ┌──────────────────────────────────┬────────────────────────────────┐
+    │             images               │            strings             │
+    │ encode_to_img(msg) -> PixelImage │  encode_to_string(msg) -> str  │
+    │ decode_from_img(BytesIO) -> str  │  decode_from_string() -> str   │
+    └──────────────────────────────────┴────────────────────────────────┘
+    """
 
     max_shuffles = 250
     max_scale_up = 400
@@ -121,12 +138,12 @@ class Rothko():
         img = Image.fromarray(self.arr)
         return PixelImage(img, pnginfo=metadata)
 
-    def decode_from_img(self, file: BufferedReader) -> str:
+    def decode_from_img(self, file: BytesIO) -> str:
         """Decodes secrets from png squares
 
         Parameters
         ___________
-        file: BufferedReader
+        file: bytes
             file object produced by opening in 'rb' mode or other means"""
 
         img = PngImageFile(fp=file)
