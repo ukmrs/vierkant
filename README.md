@@ -15,11 +15,14 @@ Presents form that allows to encode to/decode from weird pixel art
 
 <img src="./assets/slashimg.png">
 
-### /string
+### /str
 Similar to /img but encodes to plain text
 
 ### /secret
 Behind Basic Auth
+
+### /encode/*key*/*secret*
+quick encoding for simple secrets
 
 ## Installing
 ### with poetry
@@ -39,18 +42,21 @@ poetry run uvicorn src.html:app --reload
 ```
 
 ## In Terminal
-### encode through /encode/<key>/<secret>
+### encode through /encode/str or /encode/img
+  
 ```
-curl http://localhost:8000/encodeimg/key/secret --output example.png
+curl -d "key=key&secret=msg" http://localhost:8000/encode/img --output example.png
+# or
+curl http://localhost:8000/encode/key/msg --output example.png
 ```
   
-### decode image through /decode
+### decode image through /decode/str /decode/img
 ```
 # basic usage
-curl -F "file=@example.png -F "key=klucz" http://localhost:8000/decode -s
+curl -F "file=@example.png -F "key=klucz" http://localhost:8000/decode/img -s
 
 # to file
-curl -F "file=@example.png" -F "key=klucz" http://localhost:8000/decode -s > example.txt
+curl -F "file=@example.png" -F "key=klucz" http://localhost:8000/decode/img -s > example.txt
 # change to actual newlines
 sed -i 's/\\r\\n/\n/g' example.txt
 ```
