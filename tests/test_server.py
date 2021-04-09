@@ -11,13 +11,13 @@ def test_main():
     assert 200 == response.status_code
 
 
-def poke_post_image(btn, key="key", secret=None, file=None):
+def poke_post_image(mode, key="key", secret=None, file=None):
     return client.post("/img",
                        data={
                            "key": key,
                            "secret": secret,
                            "file": file,
-                           "btn": btn,
+                           "mode": mode,
                        })
 
 

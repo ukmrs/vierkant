@@ -151,9 +151,13 @@ class Rothko():
 
     def decode_from_string(self, encoded: str) -> str:
         encoded = encoded.strip()
-        arr = np.fromiter(
-            (int(encoded[i:i + 2], 16) for i in range(0, len(encoded), 2)),
-            dtype=np.uint8)
+        try:
+            arr = np.fromiter(
+                (int(encoded[i:i + 2], 16) for i in range(0, len(encoded), 2)),
+                dtype=np.uint8)
+        except ValueError:
+            return "[err] Invalid format"
+
         dim = int(sqrt(len(arr) // 3))
         arr.resize(dim, dim, 3)
         return self.decode(arr)

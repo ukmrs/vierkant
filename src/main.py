@@ -52,8 +52,8 @@ async def post_image(request: Request,
                      key: str = Form(...),
                      secret: str = Form(None),
                      file: UploadFile = File(None),
-                     btn: str = Form(...)):
-    if btn == "encode":
+                     mode: str = Form(...)):
+    if mode == "encode":
         if secret:
             pxl = Rothko(key).encode_to_img(secret, scale=True)
             pxl.save(TMP)
@@ -91,7 +91,7 @@ def image_response(background_tasks: BackgroundTasks, image_id: str):
 # ============  encode/decode from string  ============
 
 
-@app.get('/string')
+@app.get('/str')
 def get_result(request: Request):
     result = ''
     return templates.TemplateResponse('serve.html',
@@ -101,12 +101,12 @@ def get_result(request: Request):
                                       })
 
 
-@app.post('/string')
+@app.post('/str')
 def post_req(request: Request,
              key: str = Form(...),
              secret: str = Form(...),
-             btn: str = Form(...)):
-    if btn == "encode":
+             mode: str = Form(...)):
+    if mode == "encode":
         result = Rothko(key).encode_to_string(secret)
     else:
         result = Rothko(key).decode_from_string(secret)
@@ -118,10 +118,19 @@ def post_req(request: Request,
                                       })
 
 
-# ============  url based functions  ============
+# ============  url/terminal based functions  ============
 
 
-# TODO this is incorrect
+@app.post('/encode/str')
+def encode_str(key: str = Form(...), secret: str = Form(...)):
+    return Rothko(key).encode_to_string(secret)
+
+
+@app.post('/decode/str')
+def decode_str(key: str = Form(...), secret: str = Form(...)):
+    return Rothko(key).decode_from_string(secret)
+
+
 @app.get('/encode/{key}/{msg}')
 def url_based_encode(background_tasks: BackgroundTasks, key, msg):
     pxl = Rothko(key).encode_to_img(msg, scale=True)
@@ -130,8 +139,18 @@ def url_based_encode(background_tasks: BackgroundTasks, key, msg):
     return FileResponse(save_path)
 
 
-@app.post("/decode")
-async def decode(key: str = Form(...), file: UploadFile = File(None)):
+@app.post("/encode/img")
+async def encode_img(background_tasks: BackgroundTasks,
+                     key: str = Form(...),
+                     secret: str = Form(...)):
+    pxl = Rothko(key).encode_to_img(secret, scale=True)
+    save_path = pxl.save(TMP)
+    background_tasks.add_task(remove_file, save_path)
+    return FileResponse(save_path)
+
+
+@app.post("/decode/img")
+async def decode_img(key: str = Form(...), file: UploadFile = File(None)):
     img = read_bytes(await file.read())
     result = Rothko(key).decode_from_img(img)
     return result
