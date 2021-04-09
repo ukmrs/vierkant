@@ -1,6 +1,10 @@
-# tmpimgs
-This folder temporarily stores encoded images
-They're deleted shortly after serving them
+# tmpimgs :zap:
+## very temporary storage
 
-This file sole purpose is so this dir can be commited to git
-this way the project is ready out of the box after cloning
+The encoded images are briefly saved before being served but then shortly deleted.
+
+This directory should be empty except this overgrown .gitkeep.
+
+The sole purpose of this README was so this dir can be commited to git.
+But now it also explains stuff. 
+So... That's pretty neat 🦜
