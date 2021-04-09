@@ -105,6 +105,7 @@ class Rothko():
         self.arr: Optional[np.ndarray] = None
 
     def encode(self, secret: str) -> np.ndarray:
+        """internal encode returns nxnx3 array of uint8s"""
         self.init_array(secret)
         self.shuffle_squares()
         dimension = int(sqrt(self.arr.shape[0]))
@@ -160,8 +161,6 @@ class Rothko():
 
     def encode_to_string(self, secret: str) -> str:
         self.encode(secret)
-        print(self.arr)
-        print("-" * 20)
         one_dimensional_length = np.product(self.arr.shape)
         self.arr.resize(one_dimensional_length)
         return ''.join(hexify(i) for i in self.arr)
@@ -267,7 +266,7 @@ class Rothko():
 
     def deshuffe_squares(self):
         """Performs the inverse of shuffle squares
-        prepares pseudo gen"""
+        prepares pseudo gen in advance to serve them backwards"""
         iterations = self.calc_shuffling_amount()
         shift = iterations % 3
         swap_stack = deque(self.gen() for _ in range(iterations))
@@ -292,7 +291,3 @@ class Rothko():
             seed ^= np.right_shift(seed, 17)
             seed ^= np.left_shift(seed, 5)
             yield seed
-
-
-if __name__ == "__main__":
-    pass
