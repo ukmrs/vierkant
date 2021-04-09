@@ -137,3 +137,9 @@ def ed_image_helper(key, og):
 def test_ed_images():
     for text, key in zip(FOREIGN, KEYS):
         ed_image_helper(key, text)
+
+
+def test_ed_strings():
+    for text, key in zip(FOREIGN, KEYS):
+        encoded = Rothko(key).encode_to_string(text)
+        assert text == Rothko(key).decode_from_string(encoded)

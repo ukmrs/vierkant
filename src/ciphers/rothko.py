@@ -150,6 +150,7 @@ class Rothko():
         return ''.join(hexify(i) for i in self.arr)
 
     def decode_from_string(self, encoded: str) -> str:
+        encoded = encoded.strip()
         arr = np.fromiter(
             (int(encoded[i:i + 2], 16) for i in range(0, len(encoded), 2)),
             dtype=np.uint8)

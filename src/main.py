@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import secrets
 from src.ciphers.rothko import Rothko
 from fastapi import (FastAPI, File, UploadFile, Request, Form, status, Depends,
                      HTTPException)
@@ -7,9 +8,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import FileResponse
 from starlette.responses import RedirectResponse
 from starlette.background import BackgroundTasks
-import secrets
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
-
 from io import BytesIO
 import os
 
@@ -124,11 +123,18 @@ def post_req(request: Request,
 
 # TODO this is incorrect
 @app.get('/encode/{key}/{msg}')
-def encode(background_tasks: BackgroundTasks, key, msg):
+def url_based_encode(background_tasks: BackgroundTasks, key, msg):
     pxl = Rothko(key).encode_to_img(msg, scale=True)
     save_path = pxl.save(TMP)
     background_tasks.add_task(remove_file, save_path)
     return FileResponse(save_path)
+
+
+@app.post("/decode")
+async def decode(key: str = Form(...), file: UploadFile = File(None)):
+    img = read_bytes(await file.read())
+    result = Rothko(key).decode_from_img(img)
+    return result
 
 
 # ============  Basic Auth Lock  ============
