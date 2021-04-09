@@ -30,6 +30,7 @@ FastAPI auto-generated docs, nice to poke around
 
 ## Installing
 ### with poetry
+Requires python ^3.9
 
 
 ```
