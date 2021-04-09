@@ -19,10 +19,14 @@ Presents form that allows to encode to/decode from weird pixel art
 Similar to /img but encodes to plain text
 
 ### /encode/*key*/*secret*
-quick encoding for simple secrets
+Quick encoding for simple secrets
 
 ### /secret
 Behind Basic Auth
+
+### /docs
+FastAPI auto-generated docs, nice to poke around
+
 
 ## Installing
 ### with poetry
