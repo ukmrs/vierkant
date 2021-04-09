@@ -130,7 +130,6 @@ def ed_image_helper(key, og):
     finally:  # always cleanup unless something went horribly wrong
         if os.path.isfile(save_path) and save_path.split(".")[-1] == "png":
             os.unlink(save_path)
-            pass
     assert og == decoded
 
 

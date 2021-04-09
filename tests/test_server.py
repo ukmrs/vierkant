@@ -4,6 +4,8 @@ from fastapi.testclient import TestClient
 import os
 
 client = TestClient(app)
+example_key = "żyrafowate"
+example_secret = "rodzina dużych ssaków z podrzędu przeżuwaczy"
 
 
 def test_main():
@@ -22,9 +24,7 @@ def poke_post_image(mode, key="key", secret=None, file=None):
 
 
 def test_good_post_image():
-    key = "żyrafowate"
-    secret = "rodzina dużych ssaków z podrzędu przeżuwaczy"
-    response = poke_post_image("encode", key, secret)
+    response = poke_post_image("encode", example_key, example_secret)
 
     # succesfully redirected
     assert response.status_code == 303
@@ -48,8 +48,9 @@ def test_good_post_image():
     # PngImageFile(png) called by Rothko will raise SyntaxError otherwise
     # By the way check if the image is decoded into original message
     valid_png_hopefully = read_bytes(response_get.content)
-    decoded = Rothko(key).decode_from_img(valid_png_hopefully)  # type: ignore
-    assert decoded == secret
+    decoded = Rothko(example_key).decode_from_img(
+        valid_png_hopefully)  # type: ignore
+    assert decoded == example_secret
 
 
 def test_post_image_missing_key():
@@ -58,3 +59,25 @@ def test_post_image_missing_key():
     # 422 Unprocessable Entity - missing required field
     assert res_dec.status_code == 422
     assert res_enc.status_code == 422
+
+
+def test_good_post_str():
+    encode_response = client.post("/str",
+                                  data={
+                                      "key": example_key,
+                                      "secret": example_secret,
+                                      "mode": "encode",
+                                  })
+
+    assert encode_response.status_code == 200
+
+    decode_response = client.post("/str",
+                                  data={
+                                      "key": example_key,
+                                      "secret":
+                                      encode_response.context["result"],
+                                      "mode": "decode",
+                                  })
+
+    assert decode_response.status_code == 200
+    assert decode_response.context["result"] == example_secret
