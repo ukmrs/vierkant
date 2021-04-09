@@ -123,7 +123,7 @@ class Rothko():
 
         Parameters
         ___________
-        file: BytesIO
+        file: BufferedReader
             file object produced by opening in 'rb' mode or other means"""
 
         img = PngImageFile(fp=file)
@@ -154,7 +154,8 @@ class Rothko():
         arr.resize(dim, dim, 3)
         return self.decode(arr)
 
-    def decode(self, arr):
+    def decode(self, arr: np.ndarray) -> str:
+        """base decode function"""
         appendix_key = self.gen()
         self.gen()
         self.arr = arr
@@ -188,7 +189,8 @@ class Rothko():
         arr.resize(edge * edge, 3)
         return arr
 
-    def encode_mod_square(self, appendix):
+    def encode_mod_square(self, appendix) -> str:
+        """encodes information about surplus data"""
         encoded_appendix = (appendix ^ self.gen()) & 0xffffff
         return binstrip(encoded_appendix)
 
