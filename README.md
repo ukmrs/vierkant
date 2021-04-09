@@ -18,11 +18,15 @@ Presents form that allows to encode to/decode from weird pixel art
 ### /str
 Similar to /img but encodes to plain text
 
+### /encode/*key*/*secret*
+Quick encoding for simple secrets
+
 ### /secret
 Behind Basic Auth
 
-### /encode/*key*/*secret*
-quick encoding for simple secrets
+### /docs
+FastAPI auto-generated docs, nice to poke around
+
 
 ## Installing
 ### with poetry
@@ -38,25 +42,32 @@ poetry install
 poetry run pytest
 
 # Start the server
-poetry run uvicorn src.html:app --reload
+poetry run uvicorn src.main:app --reload
 ```
 
-## In Terminal
-### encode through /encode/str or /encode/img
+## Terminal examples
+### Strings
+
+```
+# encode
+curl -d "key=key&secret=SecretMessage" http://localhost:8000/encode/str
+# decode
+curl -d "key=key&secret=2c62ebfcb63a5fbf3b98e83b2bda2b1e6166a1a5242ff345163edf" http://localhost:8000/decode/str
+```
+### images
   
 ```
-curl -d "key=key&secret=msg" http://localhost:8000/encode/img --output example.png
+# encode
+curl -d "key=key&secret=SecretMessage" http://localhost:8000/encode/img --output example.png
 # or
-curl http://localhost:8000/encode/key/msg --output example.png
-```
-  
-### decode image through /decode/str /decode/img
-```
+curl http://localhost:8000/encode/key/SecretMessage --output example.png
+
+# decode
 # basic usage
-curl -F "file=@example.png -F "key=klucz" http://localhost:8000/decode/img -s
+curl -F "file=@example.png" -F "key=key" http://localhost:8000/decode/img -s
 
 # to file
-curl -F "file=@example.png" -F "key=klucz" http://localhost:8000/decode/img -s > example.txt
+curl -F "file=@example.png" -F "key=key" http://localhost:8000/decode/img -s > example.txt
 # change to actual newlines
 sed -i 's/\\r\\n/\n/g' example.txt
 ```
