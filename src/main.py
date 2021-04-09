@@ -120,6 +120,8 @@ def post_req(request: Request,
 
 # ============  url/terminal based functions  ============
 
+# string
+
 
 @app.post('/encode/str')
 def encode_str(key: str = Form(...), secret: str = Form(...)):
@@ -129,6 +131,9 @@ def encode_str(key: str = Form(...), secret: str = Form(...)):
 @app.post('/decode/str')
 def decode_str(key: str = Form(...), secret: str = Form(...)):
     return Rothko(key).decode_from_string(secret)
+
+
+# images
 
 
 @app.get('/encode/{key}/{msg}')
@@ -172,9 +177,8 @@ def get_username(credentials: HTTPBasicCredentials = Depends(security)):
 
 @app.get("/secret")
 def give_out_secret(request: Request, username: str = Depends(get_username)):
-    result = f"I am sorry {username}, this page is pointless"
     return templates.TemplateResponse("secret.html",
                                       context={
                                           "request": request,
-                                          "secret": result
+                                          "user": username,
                                       })
