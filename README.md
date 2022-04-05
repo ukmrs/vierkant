@@ -1,4 +1,4 @@
-# Carrothko
+# Vierkant
 ## Text Encoding/Decoding FastAPI server :snake::zap:
 Silly server that encodes to colorful squares or to hex gibberish.
 Supports all valid unicode characters including whitespace ones.
