@@ -1,11 +1,9 @@
 # Carrothko
 ## Text Encoding/Decoding FastAPI server :snake::zap:
-Encodes to colorful squares or to hex gibberish.
-
+Silly server that encodes to colorful squares or to hex gibberish.
 Supports all valid unicode characters including whitespace ones.
-Based on RC stream cipher, Carrothko cipher aims to be hedonistic more than utilitarian.
 Encoded Images are enlarged for aesthetics purposes as serving 2x2 pixel pngs is not very thrilling.
-
+Made for fun and to explore ciphers and fastapi a lil bit, not meant to be practical.
 
 
 ## In Browser
@@ -21,15 +19,11 @@ Similar to /img but encodes to plain text
 ### /encode/*key*/*secret*
 Quick encoding for simple secrets
 
-### /secret
-Behind Basic Auth
-
 ### /docs
 FastAPI auto-generated docs, nice to poke around
 
 
 ## Installing
-### with poetry
 Requires python ^3.9
 
 
@@ -37,24 +31,16 @@ Requires python ^3.9
 git clone https://github.com/ukmrs/carrothko && cd carrothko
 
 # Install the required dependencies
-poetry install
+pip install -r requirements.txt
 
 # run tests
-poetry run pytest
+pytest
 
 # Start the server
-poetry run uvicorn src.main:app --reload
+uvicorn src.main:app --reload
 ```
 
 ## Terminal examples
-### Strings
-
-```
-# encode
-curl -d "key=key&secret=SecretMessage" http://localhost:8000/encode/str
-# decode
-curl -d "key=key&secret=2c62ebfcb63a5fbf3b98e83b2bda2b1e6166a1a5242ff345163edf" http://localhost:8000/decode/str
-```
 ### images
   
 ```
@@ -64,11 +50,13 @@ curl -d "key=key&secret=SecretMessage" http://localhost:8000/encode/img --output
 curl http://localhost:8000/encode/key/SecretMessage --output example.png
 
 # decode
-# basic usage
 curl -F "file=@example.png" -F "key=key" http://localhost:8000/decode/img -s
+```
+### Strings
 
-# to file
-curl -F "file=@example.png" -F "key=key" http://localhost:8000/decode/img -s > example.txt
-# change to actual newlines
-sed -i 's/\\r\\n/\n/g' example.txt
+```
+# encode
+curl -d "key=key&secret=SecretMessage" http://localhost:8000/encode/str
+# decode
+curl -d "key=key&secret=2c62ebfcb63a5fbf3b98e83b2bda2b1e6166a1a5242ff345163edf" http://localhost:8000/decode/str
 ```
